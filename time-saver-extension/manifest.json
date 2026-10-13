@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Time Saver Advisor (capture)",
+  "version": "0.1.0",
+  "description": "Capture locale et anonymisée des comportements pour recommander des gains de temps.",
+  "permissions": ["storage", "alarms", "tabs"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Time Saver Advisor"
+  }
+}
