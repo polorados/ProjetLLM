@@ -1,24 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Time Saver Advisor (capture)",
+  "name": "Activity Tracker (console)",
   "version": "0.1.0",
-  "description": "Capture locale et anonymisée des comportements pour recommander des gains de temps.",
-  "permissions": ["storage", "alarms", "tabs", "history", "webNavigation",
-                   "sessions", "downloads", "topSites", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": ["tabs", "history", "webNavigation", "downloads", "sessions", "storage",
+                  "idle", "bookmarks", "readingList", "tabGroups", "management"],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "tracker.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Time Saver Advisor"
+    "default_popup": "popup.html"
   }
 }
