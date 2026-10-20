@@ -3,7 +3,9 @@
   "name": "Time Saver Advisor (capture)",
   "version": "0.1.0",
   "description": "Capture locale et anonymisée des comportements pour recommander des gains de temps.",
-  "permissions": ["storage", "alarms", "tabs"],
+  "permissions": ["storage", "alarms", "tabs", "history", "webNavigation",
+                   "sessions", "downloads", "topSites", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

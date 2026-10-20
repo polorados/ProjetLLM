@@ -15,6 +15,17 @@ function domainOf(url) {
   } catch { return null; }
 }
 
+// Renvoie le terme recherché si l'URL ressemble à une requête de recherche.
+function searchTermOf(url) {
+  try {
+    const params = new URL(url).searchParams;
+    for (const key of ['q', 'query', 'p', 'search_query', 'text']) {
+      if (params.has(key)) return params.get(key);
+    }
+  } catch { /* URL invalide */ }
+  return null;
+}
+
 async function hasConsent() {
   const { consent } = await chrome.storage.local.get('consent');
   return consent === true;
@@ -62,7 +73,45 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!changeInfo.url || tab.incognito) return;
   pushEvent({ type: 'navigation', domain: domainOf(changeInfo.url), details: {} });
+
+  // À chaque recherche, on récupère les nouvelles entrées d'historique et on les imprime.
+  const term = searchTermOf(changeInfo.url);
+  if (term) {
+    pushEvent({ type: 'search', domain: domainOf(changeInfo.url), details: { term } });
+    enqueue(fetchNewHistory);
+  }
 });
+
+// --- Création d'onglet ---
+chrome.tabs.onCreated.addListener((tab) => {
+  if (tab.incognito) return;
+  pushEvent({ type: 'tab_created', domain: domainOf(tab.url || tab.pendingUrl || ''), details: {} });
+});
+
+// --- Historique : chaque page qui entre dans l'historique ---
+chrome.history.onVisited.addListener((item) => {
+  pushEvent({
+    type: 'history_visit',
+    domain: domainOf(item.url),
+    details: { title: item.title || '', visitCount: item.visitCount },
+  });
+});
+
+// Récupère les entrées d'historique ajoutées depuis le dernier appel, les imprime et les stocke.
+let lastHistoryFetch = Date.now();
+async function fetchNewHistory() {
+  const since = lastHistoryFetch;
+  lastHistoryFetch = Date.now();
+  const items = await chrome.history.search({ text: '', startTime: since, maxResults: 100 });
+  for (const it of items) {
+    console.log('[history]', new Date(it.lastVisitTime).toISOString(), it.title || '', it.url);
+    pushEvent({
+      type: 'history_new',
+      domain: domainOf(it.url),
+      details: { title: it.title || '', lastVisitTime: it.lastVisitTime, visitCount: it.visitCount },
+    });
+  }
+}
 
 // --- Alarmes : flush régulier + purge ---
 function setupAlarms() {
