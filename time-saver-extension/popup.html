@@ -1,26 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: system-ui, sans-serif; width: 280px; padding: 12px; font-size: 14px; }
-    h1 { font-size: 16px; margin: 0 0 8px; }
-    label { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
-    button { width: 100%; margin-top: 6px; padding: 6px; cursor: pointer; }
-    .muted { color: #666; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <h1>Time Saver Advisor</h1>
-  <label>
-    <input type="checkbox" id="consent">
-    <span>J'autorise la capture locale de mon activité (domaines visités, clics, raccourcis). Le texte saisi n'est jamais enregistré.</span>
-  </label>
-  <p>Événements stockés : <strong id="count">0</strong></p>
-  <p class="muted">Les nouveaux événements sont écrits en base environ toutes les minutes.</p>
-  <button id="refresh">Actualiser</button>
-  <button id="export">Exporter mes données (JSON)</button>
-  <button id="clear">Supprimer toutes mes données</button>
-  <script type="module" src="popup.js"></script>
+<!doctype html>
+<meta charset="utf-8">
+<body style="font: 14px sans-serif; width: 200px; padding: 8px;">
+  Tracking active.<br>
+  Logs: chrome://extensions → service worker → Console.
 </body>
-</html>
