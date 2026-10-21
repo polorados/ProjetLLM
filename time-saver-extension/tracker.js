@@ -1,99 +1,89 @@
-// Tracker minimal : écoute toutes les sources d'activité Chrome disponibles
-// et imprime "tracked : ..." pour chacune. Aucune persistance, juste des logs.
+// Tracker : met un listener sur chaque événement des API autorisées dans le manifest.
+// Chaque événement est affiché dans la console et sauvegardé dans chrome.storage.local.
 
-const track = (what) => console.log('tracked :', what);
+const counts = {}; // nombre de fois que chaque type d'événement a été reçu
 
-// --- Onglets ---
-chrome.tabs.onCreated.addListener((tab) => track(`tab created ${tab.id} ${tab.pendingUrl || tab.url || ''}`)); // nouvel onglet ouvert
-chrome.tabs.onUpdated.addListener((id, info) => track(`tab updated ${id} ${JSON.stringify(info)}`)); // onglet modifié ; info = ce qui a changé : url, title, status "loading/complete", favIconUrl, pinned, muted, et audible:true/false = l'onglet émet (ou non) du son en ce moment
-chrome.tabs.onActivated.addListener(({ tabId }) => track(`tab activated ${tabId}`)); // onglet passé au premier plan (sélectionné)
-chrome.tabs.onMoved.addListener((id) => track(`tab moved ${id}`)); // onglet glissé à une autre position dans la fenêtre
-chrome.tabs.onAttached.addListener((id) => track(`tab attached ${id}`)); // onglet rattaché à une fenêtre (fin d'un glisser entre fenêtres)
-chrome.tabs.onDetached.addListener((id) => track(`tab detached ${id}`)); // onglet détaché de sa fenêtre (début d'un glisser entre fenêtres)
-chrome.tabs.onHighlighted.addListener((info) => track(`tab highlighted ${info.tabIds}`)); // ensemble des onglets sélectionnés (sélection multiple Ctrl/Shift+clic)
-chrome.tabs.onReplaced.addListener((a, b) => track(`tab replaced ${b} -> ${a}`)); // l'onglet b a été remplacé par a (ex. pré-rendu swappé par Chrome)
-chrome.tabs.onRemoved.addListener((id) => track(`tab removed ${id}`)); // onglet fermé
-
-// --- Fenêtres ---
-chrome.windows.onCreated.addListener((w) => track(`window created ${w.id}`)); // nouvelle fenêtre du navigateur
-chrome.windows.onRemoved.addListener((id) => track(`window removed ${id}`)); // fenêtre fermée
-chrome.windows.onFocusChanged.addListener((id) => track(`window focus ${id}`)); // changement de fenêtre active ; id = -1 signifie qu'AUCUNE fenêtre Chrome n'a le focus (tu es passé sur une autre application), sinon c'est l'id de la fenêtre au premier plan
-
-// --- Fenêtre : dimensions/position ---
-if (chrome.windows.onBoundsChanged) {
-  chrome.windows.onBoundsChanged.addListener((w) => track(`window bounds ${w.id}`)); // fenêtre redimensionnée ou déplacée
+function track(name, args) {
+  if (args[0]?.dom) name = `dom.${args[0].dom}`; // événements DOM envoyés par les pages : dom.<catégorie>.<type>
+  counts[name] = (counts[name] ?? 0) + 1;
+  console.log('tracked :', name, `(${Object.keys(counts).length} types différents)`, counts);
+  // une clé unique par événement : pas de risque d'en écraser un autre
+  chrome.storage.local.set({ [`${Date.now()}-${Math.random()}`]: { t: Date.now(), name, args } });
 }
 
-// --- Navigation ---
-const searchTermOf = (url) => {
-  try {
-    const p = new URL(url).searchParams;
-    for (const k of ['q', 'query', 'p', 'search_query', 'text']) if (p.has(k)) return p.get(k); // mots-clés d'une recherche présents dans l'URL
-  } catch { /* ignore */ }
-  return null;
-};
-chrome.webNavigation.onBeforeNavigate.addListener((d) => track(`nav before ${d.url}`)); // une navigation va commencer (avant chargement)
-chrome.webNavigation.onCommitted.addListener((d) => {
-  track(`nav committed ${d.transitionType} ${d.url}`); // navigation confirmée ; transitionType = comment on est arrivé : "typed" (URL tapée), "link" (clic), "reload", "auto_bookmark", "form_submit"...
-  const term = searchTermOf(d.url);
-  if (term) track(`search ${JSON.stringify(term)}`); // terme recherché, extrait de l'URL
-});
-chrome.webNavigation.onDOMContentLoaded.addListener((d) => track(`nav dom-ready ${d.url}`)); // le HTML de la page est analysé (DOM prêt)
-chrome.webNavigation.onCompleted.addListener((d) => track(`nav completed ${d.url}`)); // page entièrement chargée
-chrome.webNavigation.onErrorOccurred.addListener((d) => track(`nav error ${d.url}`)); // la navigation a échoué (erreur réseau, page annulée...)
-chrome.webNavigation.onHistoryStateUpdated.addListener((d) => track(`nav spa-state ${d.url}`)); // changement d'URL sans rechargement (site à page unique, ex. history.pushState)
-chrome.webNavigation.onReferenceFragmentUpdated.addListener((d) => track(`nav fragment ${d.url}`)); // changement de l'ancre #... dans l'URL
-chrome.webNavigation.onCreatedNavigationTarget.addListener((d) => track(`nav new-target ${d.url}`)); // un lien/clic a ouvert une nouvelle cible (nouvel onglet ou fenêtre)
 
-// --- Historique ---
-chrome.history.onVisited.addListener((it) => track(`history visit ${it.url}`)); // une page vient d'être ajoutée à l'historique
-chrome.history.onVisitRemoved.addListener((r) => track(`history removed ${r.allHistory ? 'all' : r.urls}`)); // suppression d'historique ; "all" = tout l'historique effacé, sinon la liste d'URL retirées
+const manifest = chrome.runtime.getManifest();
 
-// --- Téléchargements ---
-chrome.downloads.onCreated.addListener((d) => track(`download created ${d.url}`)); // un téléchargement démarre
-chrome.downloads.onChanged.addListener((d) => track(`download changed ${d.id} ${JSON.stringify(d.state || {})}`)); // évolution d'un téléchargement ; state passe de "in_progress" à "complete" ou "interrupted"
-chrome.downloads.onErased.addListener((id) => track(`download erased ${id}`)); // entrée retirée de la liste des téléchargements
+// API autorisées dans le manifest + celles qui n'ont pas besoin de permission
+const apis = [
+  ...(manifest.permissions ?? []),
+  "windows",
+  "runtime",
+  "commands",
+  "action",
+  "permissions",
+  "omnibox",
+];
 
-// --- Sessions (onglets/fenêtres récemment fermés) ---
-chrome.sessions.onChanged.addListener(() => track('sessions changed')); // la liste des onglets/fenêtres récemment fermés (ou synchronisés) a changé
+for (const api of new Set(apis)) { 
+  if (api === 'storage') continue; // on écrit dans storage à chaque événement : l'écouter ferait une boucle infinie
+  const namespace = chrome[api];
+  if (!namespace) continue;
 
-// --- Inactivité : actif / absent / verrouillé ---
-chrome.idle.setDetectionInterval(60); // seuil d'inactivité : 60 s sans souris/clavier => "idle"
-chrome.idle.onStateChanged.addListener((state) => track(`idle ${state}`)); // état de l'utilisateur : "active", "idle" (absent), "locked" (écran verrouillé)
-
-// --- Favoris ---
-chrome.bookmarks.onCreated.addListener((id, b) => track(`bookmark created ${b.title} ${b.url || ''}`)); // favori ajouté (url vide = dossier)
-chrome.bookmarks.onRemoved.addListener((id) => track(`bookmark removed ${id}`)); // favori supprimé
-chrome.bookmarks.onChanged.addListener((id, c) => track(`bookmark changed ${JSON.stringify(c)}`)); // favori renommé ou son URL modifiée
-chrome.bookmarks.onMoved.addListener((id) => track(`bookmark moved ${id}`)); // favori déplacé dans un autre dossier
-
-// --- Liste de lecture ---
-if (chrome.readingList) {
-  chrome.readingList.onEntryAdded.addListener((e) => track(`readinglist added ${e.url}`)); // page ajoutée à la liste de lecture
-  chrome.readingList.onEntryRemoved.addListener((e) => track(`readinglist removed ${e.url}`)); // page retirée de la liste de lecture
-  chrome.readingList.onEntryUpdated.addListener((e) => track(`readinglist updated ${e.url}`)); // entrée modifiée (ex. marquée lue/non lue)
+  for (const key of Object.keys(namespace)) {
+    if (key.startsWith('on') && namespace[key]?.addListener) {
+      try {
+        namespace[key].addListener((...args) => track(`${api}.${key}`, args));
+      } catch (e) {
+        console.log('skipped :', `${api}.${key}`, e.message); // ex. webRequest exige un filtre d'URL
+      }
+    }
+  }
 }
 
-// --- Groupes d'onglets ---
-if (chrome.tabGroups) {
-  chrome.tabGroups.onCreated.addListener((g) => track(`group created ${g.id}`)); // nouveau groupe d'onglets créé
-  chrome.tabGroups.onUpdated.addListener((g) => track(`group updated ${g.id} ${g.title || ''}`)); // groupe renommé, recoloré ou (dé)plié
-  chrome.tabGroups.onMoved.addListener((g) => track(`group moved ${g.id}`)); // groupe déplacé dans la barre d'onglets
-  chrome.tabGroups.onRemoved.addListener((g) => track(`group removed ${g.id}`)); // groupe dissous
+chrome.idle.setDetectionInterval(60); // "idle" après 60 s sans souris/clavier
+
+// À taper dans la console du service worker : télécharge tous les logs dans Téléchargements/activity-log.json
+function exportLogs() {
+  chrome.storage.local.get(null, (all) => {
+    const logs = Object.values(all).sort((a, b) => a.t - b.t);
+    chrome.downloads.download({
+      url: 'data:application/json,' + encodeURIComponent(JSON.stringify(logs, null, 2)),
+      filename: 'activity-log.json',
+      conflictAction: 'overwrite',
+    });
+  });
 }
 
-// --- Autres extensions installées/activées ---
-chrome.management.onInstalled.addListener((e) => track(`ext installed ${e.name}`)); // une autre extension vient d'être installée
-chrome.management.onUninstalled.addListener((id) => track(`ext uninstalled ${id}`)); // une extension a été désinstallée
-chrome.management.onEnabled.addListener((e) => track(`ext enabled ${e.name}`)); // une extension a été activée
-chrome.management.onDisabled.addListener((e) => track(`ext disabled ${e.name}`)); // une extension a été désactivée
+// ============================================================================
+// ÉVÉNEMENTS DOM (ce qui se passe DANS les pages)
+// À chaque page chargée, on y injecte une fonction qui écoute les événements DOM
+// et les renvoie ici via runtime.sendMessage (déjà tracké par runtime.onMessage).
+// ============================================================================
+const injectDomTracking = (tabId) =>
+  chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      if (window.domTracked) return; // déjà injecté dans cette page : pas de doublons
+      window.domTracked = true;
+      const send = (category, type, target) => chrome.runtime.sendMessage({ dom: `${category}.${type}`, target, url: location.href });
+      const categories = {
+        mouse: ['click', 'dblclick', 'contextmenu', 'scroll'],
+        keyboard: ['keydown'], // seulement le fait qu'une touche a été pressée, jamais laquelle
+        clipboard: ['copy', 'cut', 'paste'],
+        visibility: ['visibilitychange', 'focus', 'blur'], // focus/blur de la fenêtre (onglet actif ou non)
+        media: ['play', 'pause', 'ended', 'volumechange'],
+        forms: ['focusin', 'change', 'submit'], // champ sélectionné / modifié / formulaire envoyé (sans le contenu)
+      };
+      for (const [category, types] of Object.entries(categories)) {
+        // les événements média ne remontent pas jusqu'à window : il faut les capturer (true)
+        for (const type of types) window.addEventListener(type, (e) => send(category, type, e.target.tagName), category === 'media');
+      }
+      send('performance', 'load', Math.round(performance.getEntriesByType('navigation')[0]?.duration)); // temps de chargement (ms)
+    },
+  }).catch((e) => console.log('DOM injection failed :', e.message)); // ex. pages chrome:// interdites
 
-// --- Stockage ---
-chrome.storage.onChanged.addListener((changes, area) => track(`storage ${area} ${Object.keys(changes)}`)); // une valeur stockée a changé ; area = "local", "sync" ou "session", suivi des clés modifiées
-
-// --- Cycle de vie du service worker ---
-chrome.runtime.onInstalled.addListener((d) => track(`installed ${d.reason}`)); // extension installée ou mise à jour ; reason = "install" / "update"
-chrome.runtime.onStartup.addListener(() => track('startup')); // Chrome vient de démarrer et charge l'extension
-chrome.runtime.onSuspend.addListener(() => track('suspend')); // le service worker va s'endormir (inactif)
-
-track('tracker loaded'); // le script est chargé et prêt
+// page chargée (seulement la page principale, pas les iframes)
+chrome.webNavigation.onCompleted.addListener(({ tabId, frameId }) => frameId === 0 && injectDomTracking(tabId));
+// extension (re)chargée : on injecte aussi dans les onglets déjà ouverts
+chrome.runtime.onInstalled.addListener(() => chrome.tabs.query({}, (tabs) => tabs.forEach((t) => injectDomTracking(t.id))));

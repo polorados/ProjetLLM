@@ -3,7 +3,9 @@
   "name": "Activity Tracker (console)",
   "version": "0.1.0",
   "permissions": ["tabs", "history", "webNavigation", "downloads", "sessions", "storage",
-                  "idle", "bookmarks", "readingList", "tabGroups", "management"],
+                  "idle", "bookmarks", "readingList", "tabGroups", "management",
+                  "webRequest", "alarms", "contextMenus", "notifications", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "tracker.js"
   },
