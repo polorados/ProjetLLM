@@ -1,0 +1,101 @@
+{
+  "$schema": "./catalog.schema.json",
+  "schema_version": 1,
+  "version": "2026-10-20",
+  "entries": [
+    {
+      "id": "tab-groups",
+      "type": "chrome_feature",
+      "name": "Groupes d'onglets",
+      "summary": "Regroupe les onglets par projet, avec une couleur et un nom, et permet de les replier.",
+      "needs": ["trop_onglets", "aller_retour"],
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "tab-search",
+      "type": "chrome_feature",
+      "name": "Recherche dans les onglets",
+      "summary": "Retrouve un onglet ouvert par son titre sans les parcourir un par un.",
+      "needs": ["trop_onglets", "raccourcis_clavier"],
+      "shortcut": "Ctrl+Maj+A (Cmd+Maj+A sur Mac)",
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "pin-tabs",
+      "type": "chrome_feature",
+      "name": "Épingler des onglets",
+      "summary": "Garde les sites utilisés chaque jour dans de petits onglets fixes qui restent à gauche.",
+      "needs": ["ouverture_quotidienne"],
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "startup-pages",
+      "type": "chrome_feature",
+      "name": "Pages ouvertes au démarrage",
+      "summary": "Ouvre automatiquement un ensemble de pages choisi à chaque lancement de Chrome.",
+      "needs": ["ouverture_quotidienne"],
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "bookmark-all-tabs",
+      "type": "chrome_feature",
+      "name": "Mettre tous les onglets en favoris",
+      "summary": "Enregistre tous les onglets ouverts dans un dossier pour les rouvrir plus tard en une fois.",
+      "needs": ["trop_onglets", "ouverture_quotidienne"],
+      "shortcut": "Ctrl+Maj+D (Cmd+Maj+D sur Mac)",
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "memory-saver",
+      "type": "chrome_feature",
+      "name": "Économiseur de mémoire",
+      "summary": "Met en veille les onglets inactifs pour libérer de la mémoire quand beaucoup d'onglets sont ouverts.",
+      "needs": ["trop_onglets"],
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "reading-mode",
+      "type": "chrome_feature",
+      "name": "Mode lecture",
+      "summary": "Affiche un article dans un panneau épuré, sans publicités ni éléments distrayants.",
+      "needs": ["lecture_longue"],
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "built-in-translate",
+      "type": "chrome_feature",
+      "name": "Traduction intégrée",
+      "summary": "Traduit une page entière dans votre langue sans copier le texte ailleurs.",
+      "needs": ["traduction"],
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "reopen-closed-tab",
+      "type": "chrome_feature",
+      "name": "Rouvrir un onglet fermé",
+      "summary": "Restaure le dernier onglet fermé, y compris par erreur.",
+      "needs": ["raccourcis_clavier"],
+      "shortcut": "Ctrl+Maj+T (Cmd+Maj+T sur Mac)",
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    },
+    {
+      "id": "tab-switch-shortcuts",
+      "type": "chrome_feature",
+      "name": "Raccourcis pour changer d'onglet",
+      "summary": "Passe d'un onglet à l'autre au clavier au lieu de la souris.",
+      "needs": ["aller_retour", "raccourcis_clavier"],
+      "shortcut": "Ctrl+Tab, ou Ctrl+1 à 8 (Cmd+1 à 8 sur Mac)",
+      "url": "https://support.google.com/chrome",
+      "last_verified": null
+    }
+  ]
+}
