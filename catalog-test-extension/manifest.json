@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Catalogue de recommandations (dev)",
+  "version": "0.1.0",
+  "description": "Recommande des fonctionnalités et extensions Chrome utiles. Version de développement : étape catalogue.",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://polorados.github.io/*"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Catalogue",
+    "default_popup": "popup.html"
+  },
+    "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}

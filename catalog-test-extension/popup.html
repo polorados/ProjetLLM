@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Catalogue</title>
+  <style>
+    body { font: 13px system-ui, sans-serif; width: 380px; padding: 12px; }
+    button, select { margin: 0 4px 6px 0; }
+    pre { background: #f4f4f4; padding: 8px; max-height: 320px; overflow: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h3>Test du catalogue</h3>
+  <div>
+    <button id="info">Infos</button>
+    <button id="sync">Synchroniser (force)</button>
+    <button id="settings">Réglages</button>
+  </div>
+  <div>
+    <select id="need"></select>
+    <button id="search">Chercher</button>
+  </div>
+  <pre id="out">Clique sur un bouton.</pre>
+  <!-- Pas de script inline : Chrome l'interdit dans les extensions -->
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
