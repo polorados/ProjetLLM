@@ -6,7 +6,7 @@
     }
  }  */
 // Read storage once, keep only tab events, sort chronologically
-async function load_events() {
+export async function load_events() {
   const all = await chrome.storage.local.get(null);
   const events = [];
 
@@ -16,8 +16,7 @@ async function load_events() {
 
     const name = Object.keys(record)[0];          // created / activated / updated / removed
     events.push({ time: Number(m[1]), name, ...record[name] });  // -> { time, name, id, url, info }
-  }
-
+  }  
   return events.sort((a, b) => a.time - b.time);
 }
 
@@ -29,10 +28,21 @@ async function load_events() {
         id2 : [time_stamp: created, time_stamp: closed, ...],
     }
 */
-async function per_id(events) {
+export async function per_id(events) {
   events ??= await load_events();
+
   const out = {};
-  for (const { time, name, data } of events) (out[data.id] ??= []).push({ time, name });
+
+  for (const event of events) {
+    const time = Number(event._time);
+    const [name, data] = Object.entries(event)
+      .filter(([key]) => key !== "_time")[0] ?? [];
+
+    if (!data || data.id == null) continue;
+
+    (out[data.id] ??= []).push({ time, name });
+  }
+
   return out;
 }
 
@@ -42,7 +52,7 @@ async function per_id(events) {
         created: [time_stamp1, ...]
     }
 */
-async function per_event(events) {
+export async function per_event(events) {
   events ??= await load_events();
   const out = {};
   for (const { time, name } of events) (out[name] ??= []).push(time);
@@ -53,13 +63,9 @@ async function per_event(events) {
 /* aggregate per url in chronological order: 
     [url1, url2, ...]
 */
-async function per_url(events) {
+export async function per_url(events) {
   events ??= await load_events();
   const urls = new Set();
   for (const { url } of events) if (url) urls.add(url);
   return [...urls];
 }
-
-// Usage: load once, reuse for all three
-const events = await load_events();
-const [ids, evts, urls] = await Promise.all([per_id(events), per_event(events), per_url(events)]);
