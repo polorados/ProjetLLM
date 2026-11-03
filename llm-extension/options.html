@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Réglages – Catalogue de recommandations</title>
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; max-width: 640px; margin: 24px auto; padding: 0 16px; }
+    section { border: 1px solid #ccc; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+    h2 { margin: 0 0 8px; font-size: 17px; }
+    label { display: block; margin: 6px 0; }
+    input[type="password"], input[type="text"] { width: 100%; box-sizing: border-box; padding: 6px; }
+    .hint { color: #555; font-size: 13px; }
+    .danger { color: #b00020; }
+    #status { margin-left: 8px; color: #137333; }
+    fieldset:disabled { opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <h1>Réglages</h1>
+
+  <section>
+    <h2>1. Consentement</h2>
+    <label>
+      <input type="checkbox" id="consent">
+      J’accepte que l’extension envoie à un service d’IA (LLM) les informations cochées ci-dessous, afin de me recommander des fonctionnalités et extensions.
+    </label>
+    <p class="hint">Sans ce consentement, rien n’est envoyé. Tu peux le retirer à tout moment.</p>
+  </section>
+
+  <section>
+    <h2>2. Clé API</h2>
+    <input type="password" id="apiKey" maxlength="300" autocomplete="off" spellcheck="false" placeholder="Colle ta clé API ici">
+    <label><input type="checkbox" id="showKey"> Afficher la clé</label>
+    <p class="hint">
+      La clé est stockée en clair dans <code>chrome.storage.local</code> : elle reste sur cet ordinateur (non synchronisée),
+      mais toute personne ayant accès à ton profil Chrome pourrait la lire. Utilise une clé dédiée avec une limite de dépense.
+    </p>
+  </section>
+
+  <section>
+    <h2>3. Ce qui est partagé avec le LLM</h2>
+    <fieldset id="shareSet" style="border:none; padding:0; margin:0;">
+      <div id="share"></div>
+    </fieldset>
+    <p class="hint">Rien n’est coché par défaut. Les cases sont actives seulement si tu as donné ton consentement.</p>
+  </section>
+
+  <p>
+    <button id="save">Enregistrer</button>
+    <span id="status" role="status"></span>
+  </p>
+
+  <section>
+    <h2>4. Mes données</h2>
+    <button id="export">Exporter mes données (JSON)</button>
+    <button id="delete" class="danger">Supprimer toutes mes données</button>
+    <p class="hint">
+      L’export ne contient pas ta clé API. La suppression efface tes réglages (clé API comprise) et les données collectées ;
+      le catalogue public de recommandations est conservé.
+    </p>
+  </section>
+
+  <!-- Script externe obligatoire : Chrome interdit les scripts inline dans les extensions -->
+  <script type="module" src="options.js"></script>
+</body>
+</html>
