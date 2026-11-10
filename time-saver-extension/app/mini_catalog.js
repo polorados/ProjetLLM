@@ -3,6 +3,7 @@ export const CATALOG_URL = 'https://polorados.github.io/catalogue-extension/cata
 const BUNDLED_PATH = 'catalog.bundled.json'; // copy shipped inside the extension
 const STORAGE_KEY = 'catalog';
 export const ALARM_NAME = 'catalog-sync';
+export const NEEDS = ['trop_onglets', 'aller_retour', 'copier_coller', 'ouverture_quotidienne', 'traduction', 'lecture_longue', 'raccourcis_clavier'];
 
 // Download the remote catalog and store it. Never throws.
 export async function syncCatalog() {
