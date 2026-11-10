@@ -1,0 +1,14 @@
+.needs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.need-tag {
+    background: #e8eef8;
+    color: #315a91;
+    padding: 3px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+}
