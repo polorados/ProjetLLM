@@ -1,6 +1,7 @@
 import { load_events, per_id, per_event, per_url } from "./data_aggregator.js";
-import { save, track_tabs } from "./mini_tracker.js";
-import { searchCatalog, syncCatalog } from "./mini_catalog.js"
+import { save, track_tabs } from "./app/mini_tracker.js";
+import { searchCatalog, syncCatalog } from "./app/mini_catalog.js"
+import { testLLM } from "./llm.js";
 
 
 async function decide(events) { 
@@ -66,6 +67,14 @@ async function main() {
     console.log("has decided this : ", recommendations)
 
     await runTests();
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    let res = "failed";
+
+    while (res == "failed") {
+        await sleep(2000);
+        res = await testLLM();
+        console.log("LLM response : ", res);
+    }
 }
 
 main();

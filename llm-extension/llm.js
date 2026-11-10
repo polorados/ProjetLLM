@@ -5,9 +5,8 @@ import { getSettings, RECO_KEY, LLM_META_KEY } from './settings.js';
 import { SYSTEM_PROMPT } from './prompt.js';
 import { TOOL_DEFS, createToolRunner, defaultGetInstalled } from './tools.js';
 import * as openai from './providers/openai.js';
-import * as anthropic from './providers/anthropic.js';
 
-export const PROVIDERS = { openai, anthropic };
+export const PROVIDERS = { openai };
 export const PROVIDER = 'openai';          // fournisseur utilisé ; ajoute son adresse dans host_permissions du manifest
 const MAX_STEPS = 8;                       // garde-fou : nombre maximum d'allers-retours avec le LLM
 const FIRST_MESSAGE = 'Analyse mes usages agrégés et recommande ce qui m’est utile. Commence par get_user_patterns.';
