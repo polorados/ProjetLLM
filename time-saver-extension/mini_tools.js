@@ -3,7 +3,7 @@
 // TOOL_DEFS est un objet pour que le LLM sache quels outils
 // sont à sa disposition
 
-import { }
+import { per_id, per_event, per_url } from './data_aggregator.js';
 export const TOOL_DEFS = [
     {
       type: "function",
