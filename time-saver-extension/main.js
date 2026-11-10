@@ -23,6 +23,28 @@ async function save_recommendations(recommendations) {
     );
 }
 
+async function runTests() {
+    console.log("--- DÉBUT DU TEST DU TOOL RUNNER ---");
+    const { run, state } = createToolRunner();
+
+    console.log("Test de search_catalog...");
+    const catalogResult = await run('search_catalog', { needs: 'trop_onglets' });
+    console.log("Résultat :", catalogResult);
+
+    console.log("Test de get_installed_extensions...");
+    const installedResult = await run('get_installed_extensions', {});
+    console.log("Résultat :", installedResult);
+
+    console.log("Test de submit_recommendations...");
+    await run('submit_recommendations', { 
+        recommendations: [{ id: "test_123", reason: "Raison de test" }],
+        notes: "Test réussi"
+    });
+    
+    console.log("--- ÉTAT FINAL DU RUNNER ---");
+    console.log(state);
+}
+
 async function main() {
 
     syncCatalog();
@@ -42,6 +64,8 @@ async function main() {
     console.log({ ids, evts, urls });
     const recommendations = await decide(events)
     console.log("has decided this : ", recommendations)
+
+    await runTests();
 }
 
 main();
