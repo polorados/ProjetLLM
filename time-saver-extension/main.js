@@ -5,9 +5,22 @@ import { searchCatalog, syncCatalog } from "./mini_catalog.js"
 
 async function decide(events) { 
     const ids = await per_id(events)
+    let recommendations;
     if (Object.keys(ids).length >= 0) {
-        return await searchCatalog("trop_onglets");
+        recommendations = await searchCatalog("trop_onglets");
     }
+    recommendations = await save_recommendations(recommendations);
+    await chrome.storage.local.set({ recommendations: recommendations });
+    return recommendations;
+}
+
+async function save_recommendations(recommendations) {
+    return Object.fromEntries(
+        recommendations.map(({ id, name, needs, summary, url, shortcut }) => [
+            id,
+            { name, needs, summary, url, shortcut }
+        ])
+    );
 }
 
 async function main() {
@@ -27,8 +40,8 @@ async function main() {
     ]);
 
     console.log({ ids, evts, urls });
-    const out = await decide(events)
-    console.log("has decided this : ", out)
+    const recommendations = await decide(events)
+    console.log("has decided this : ", recommendations)
 }
 
 main();
