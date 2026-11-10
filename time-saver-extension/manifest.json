@@ -11,6 +11,6 @@
     "type": "module"
   },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "frontend/popup.html"
   }
 }
