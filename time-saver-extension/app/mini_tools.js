@@ -149,7 +149,6 @@ export const TOOL_DEFS = [
     },
   },
 ];
-
 export async function getInstalled() {
   const all = await chrome.management.getAll();
   return all
@@ -214,3 +213,11 @@ export function createToolRunner(){
 
   return { run, state };
 }
+
+export const WEB_SEARCH = {
+  enabled: false,
+  maxUses: 2,
+  allowedDomains: ['chromewebstore.google.com', 'developer.chrome.com', 'support.google.com'],
+};
+
+export const FIRST_MESSAGE = "Hello World";

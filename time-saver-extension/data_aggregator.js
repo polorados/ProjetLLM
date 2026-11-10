@@ -5,6 +5,19 @@
       info: info()
     }
  }  */
+
+/*
+Array{
+  Dict{
+   str:Dict{
+    str:Dict{
+      id:str,url:str,info:str
+    }
+   }
+  }
+}
+
+*/
 // Read storage once, keep only tab events, sort chronologically
 export async function load_events() {
   const all = await chrome.storage.local.get(null);
