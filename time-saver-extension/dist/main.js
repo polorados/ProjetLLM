@@ -133,6 +133,8 @@ var init_mini_prompt = __esm({
 // app/mini_tools.js
 var init_mini_tools = __esm({
   "app/mini_tools.js"() {
+    init_data_aggregator();
+    init_mini_catalog();
   }
 });
 
