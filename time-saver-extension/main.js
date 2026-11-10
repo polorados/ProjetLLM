@@ -2,6 +2,7 @@ import { load_events, per_id, per_event, per_url } from "./data_aggregator.js";
 import { save, track_tabs } from "./app/mini_tracker.js";
 import { searchCatalog, syncCatalog } from "./app/mini_catalog.js"
 import { testLLM } from "./llm.js";
+import { createToolRunner } from "./app/mini_tools.js";
 
 
 async function decide(events) { 
