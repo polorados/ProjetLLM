@@ -43,14 +43,11 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // data_aggregator.js
 async function load_events() {
   const all = await chrome.storage.local.get(null);
-  const events = [];
-  for (const [key, record] of Object.entries(all)) {
-    const m = /^event-tab-(\d+)-[a-f0-9]{4}$/i.exec(key);
-    if (!m) continue;
-    const name = Object.keys(record)[0];
-    events.push({ time: Number(m[1]), name, ...record[name] });
-  }
-  return events.sort((a, b) => a.time - b.time);
+  return Object.entries(all).filter(([key]) => /^event-tab-\d+-[a-f0-9]{4}$/i.test(key)).map(([key, record]) => ({
+    time: Number(key.match(/^event-tab-(\d+)/)[1]),
+    name: Object.keys(record)[0],
+    ...record[Object.keys(record)[0]]
+  })).sort((a, b) => a.time - b.time).map(({ time, ...event }) => event);
 }
 async function per_id(events) {
   events ??= await load_events();
