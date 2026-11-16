@@ -128,50 +128,165 @@ var init_mini_prompt = __esm({
 });
 
 // app/mini_tools.js
-async function getInstalled() {
-  const all = await chrome.management.getAll();
-  return all.filter((e) => e.type === "extension" && e.id !== chrome.runtime.id).slice(0, 100).map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }));
-}
-function createToolRunner2() {
-  const state2 = { recommendations: null };
+async function run(name, input) {
   const impls = {
-    async per_id({ events } = {}) {
-      return await per_id(events);
-    },
-    async per_event({ events } = {}) {
-      return await per_event(events);
-    },
-    async per_url({ events } = {}) {
-      return await per_url(events);
-    },
-    async search_catalog({ needs }) {
-      return await searchCatalog(needs);
-    },
-    async get_installed_extensions() {
-      return await getInstalled();
-    },
-    async submit_recommendations({ recommendations, notes = "" }) {
-      state2.recommendations = recommendations;
-      state2.notes = typeof notes === "string" ? notes.slice(0, 300) : "";
+    async helloWorld({ somethingToSay }) {
+      return `Hello, ${somethingToSay}!`;
     }
   };
-  async function run(name, input) {
-    const impl = impls[name];
-    if (!impl) return { text: JSON.stringify({ error: `outil inconnu : ${name}` }), isError: true };
-    try {
-      const out = await impl(input && typeof input === "object" ? input : {});
-      const isError = Boolean(out && typeof out === "object" && out.error);
-      return { text: typeof out === "string" ? out : JSON.stringify(out), isError };
-    } catch (e) {
-      return { text: JSON.stringify({ error: String(e?.message ?? e) }), isError: true };
-    }
+  const impl = impls[name];
+  if (!impl) {
+    throw new Error(`Unknown tool: ${name}`);
   }
-  return { run, state: state2 };
+  return await impl(input);
 }
+var TOOL_DEFS, WEB_SEARCH, TEST_PROMPT;
 var init_mini_tools = __esm({
   "app/mini_tools.js"() {
-    init_data_aggregator();
-    init_mini_catalog();
+    TOOL_DEFS = [
+      {
+        type: "function",
+        name: "helloWorld",
+        description: "sends a message",
+        parameters: {
+          type: "object",
+          properties: {
+            somethingToSay: {
+              type: "string",
+              description: "The message to send"
+            }
+          },
+          required: ["somethingToSay"],
+          additionalProperties: false
+        },
+        strict: true
+      }
+    ];
+    WEB_SEARCH = {
+      type: "web_search",
+      filters: {
+        allowed_domains: [
+          "chromewebstore.google.com",
+          "developer.chrome.com",
+          "support.google.com"
+        ]
+      }
+    };
+    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
+  }
+});
+
+// node_modules/openai/lib/responses/ResponseInputItems.mjs
+function toResponseInputItems(items) {
+  const inputItems = [];
+  for (const item of items) {
+    const inputItem = toResponseInputItem(item);
+    if (inputItem) {
+      inputItems.push(inputItem);
+    }
+  }
+  return inputItems;
+}
+function toResponseInputItem(item) {
+  switch (item.type) {
+    case "message": {
+      if (item.role !== "assistant" || !("id" in item) || !Array.isArray(item.content)) {
+        return stripCreatedBy(item);
+      }
+      const content = item.content.map((part) => {
+        if ((part.type === "output_text" || part.type === "refusal") && "parsed" in part) {
+          const { parsed: _parsed, ...inputPart } = part;
+          return inputPart;
+        }
+        return part;
+      });
+      if (content.every((part, index) => part === item.content[index])) {
+        return stripCreatedBy(item);
+      }
+      return { ...stripCreatedBy(item), content };
+    }
+    case "function_call": {
+      const inputItem = stripCreatedBy(item);
+      if (!("parsed_arguments" in inputItem)) {
+        return inputItem;
+      }
+      const { parsed_arguments: _parsedArguments, ...withoutParsedArguments } = inputItem;
+      return withoutParsedArguments;
+    }
+    case "additional_tools": {
+      if (item.role !== "developer") {
+        return null;
+      }
+      return stripCreatedBy(item);
+    }
+    case "shell_call_output": {
+      const output = item.output.map((chunk) => stripCreatedBy(chunk));
+      return {
+        ...stripCreatedBy(item),
+        output
+      };
+    }
+    case "computer_call_output": {
+      const { created_by: _createdBy, ...withoutCreatedBy } = item;
+      if (withoutCreatedBy.status === "failed") {
+        return null;
+      }
+      return withoutCreatedBy;
+    }
+    case "custom_tool_call_output": {
+      if ("status" in item && item.status !== "completed") {
+        return null;
+      }
+      const { created_by: _createdBy, status: _status, ...inputItem } = item;
+      return inputItem;
+    }
+    case "apply_patch_call":
+    case "apply_patch_call_output":
+    case "code_interpreter_call":
+    case "compaction":
+    case "compaction_trigger":
+    case "computer_call":
+    case "configuration_update":
+    case "custom_tool_call":
+    case "file_search_call":
+    case "function_call_output":
+    case "image_generation_call":
+    case "item_reference":
+    case "local_shell_call":
+    case "local_shell_call_output":
+    case "mcp_approval_request":
+    case "mcp_approval_response":
+    case "mcp_call":
+    case "mcp_list_tools":
+    case "program":
+    case "program_output":
+    case "reasoning":
+    case "shell_call":
+    case "tool_search_call":
+    case "tool_search_output":
+    case "web_search_call":
+    case null:
+    case void 0: {
+      return stripCreatedBy(item);
+    }
+    default: {
+      return assertNever(item);
+    }
+  }
+}
+function stripCreatedBy(item) {
+  if (!("created_by" in item)) {
+    return item;
+  }
+  const { created_by: _createdBy, ...rest } = item;
+  return rest;
+}
+function assertNever(value) {
+  const type = value.type;
+  throw new TypeError(`Unsupported response item type: ${String(type)}`);
+}
+var init_ResponseInputItems = __esm({
+  "node_modules/openai/lib/responses/ResponseInputItems.mjs"() {
   }
 });
 
@@ -382,9 +497,9 @@ var init_error = __esm({
       }
     };
     SubjectTokenProviderError = class extends OpenAIError {
-      constructor(message, provider2, cause) {
+      constructor(message, provider, cause) {
         super(message);
-        this.provider = provider2;
+        this.provider = provider;
         this.cause = cause;
       }
     };
@@ -2658,7 +2773,7 @@ var init_workload_identity_auth = __esm({
         this.refreshPromise = null;
         this.tokenGeneration = 0;
         this.tokenExchangeUrl = "https://auth.openai.com/oauth/token";
-        const { identityProviderId, serviceAccountId, clientId, refreshBufferSeconds, provider: provider2 } = config;
+        const { identityProviderId, serviceAccountId, clientId, refreshBufferSeconds, provider } = config;
         this.config = {
           identityProviderId,
           serviceAccountId,
@@ -2667,8 +2782,8 @@ var init_workload_identity_auth = __esm({
           // Spread creates an own data property without invoking inherited setters or changing the object prototype.
           ...refreshBufferSeconds === void 0 ? {} : { refreshBufferSeconds },
           provider: {
-            tokenType: provider2.tokenType,
-            getToken: provider2.getToken.bind(provider2)
+            tokenType: provider.tokenType,
+            getToken: provider.getToken.bind(provider)
           }
         };
         this.fetch = fetch2 ?? getDefaultFetch();
@@ -3039,9 +3154,9 @@ function isX509WorkloadIdentity(identity) {
   }
   let providerOwner = identity;
   while (providerOwner !== null && providerOwner !== Object.prototype) {
-    const provider2 = Object.getOwnPropertyDescriptor(providerOwner, "provider");
-    if (provider2) {
-      if (!("value" in provider2) || provider2.value !== void 0) {
+    const provider = Object.getOwnPropertyDescriptor(providerOwner, "provider");
+    if (provider) {
+      if (!("value" in provider) || provider.value !== void 0) {
         return false;
       }
       break;
@@ -3721,8 +3836,8 @@ function overridesOrdinaryAuthentication({ apiKey, adminAPIKey }) {
 function prepareProviderClone(inherited, overrides) {
   const inheritedProvider = inherited.provider;
   const replacingProvider = overrides.credential ?? overrides.workloadIdentity;
-  const provider2 = overrides.provider ?? (replacingProvider ? void 0 : inheritedProvider);
-  if (provider2 !== inheritedProvider) {
+  const provider = overrides.provider ?? (replacingProvider ? void 0 : inheritedProvider);
+  if (provider !== inheritedProvider) {
     delete inherited.baseURL;
     delete inherited.organization;
     delete inherited.project;
@@ -3731,7 +3846,7 @@ function prepareProviderClone(inherited, overrides) {
     delete inherited.fetchOptions;
     delete inherited.fetch;
   }
-  if (provider2) {
+  if (provider) {
     delete inherited.apiKey;
     delete inherited.adminAPIKey;
     delete inherited.credential;
@@ -3739,7 +3854,7 @@ function prepareProviderClone(inherited, overrides) {
     delete inherited.x509Transport;
     delete inherited.baseURL;
   }
-  return provider2;
+  return provider;
 }
 function prepareX509ClientClone(inherited, overrides, credential, currentlyX509) {
   const nextIdentity = hasOwn(overrides, "workloadIdentity") ? overrides.workloadIdentity : inherited.workloadIdentity;
@@ -7607,7 +7722,7 @@ function isCompleteAudio(audio) {
 function assertIsEmpty(obj) {
   void obj;
 }
-function assertNever(_x) {
+function assertNever2(_x) {
   return _x;
 }
 var _ChatCompletionStream_instances, _ChatCompletionStream_params, _ChatCompletionStream_rejectsUnfinishedTurns, _ChatCompletionStream_audioDoneChoiceIndexes, _ChatCompletionStream_choiceEventStates, _ChatCompletionStream_currentChatCompletionSnapshot, _ChatCompletionStream_hasAutoParseableTool, _ChatCompletionStream_partialJSONParseBudget, _ChatCompletionStream_beginRequest, _ChatCompletionStream_getChoiceEventState, _ChatCompletionStream_addChunk, _ChatCompletionStream_emitToolCallDoneEvent, _ChatCompletionStream_emitContentDoneEvents, _ChatCompletionStream_validateStructuredSnapshots, _ChatCompletionStream_endRequest, _ChatCompletionStream_accumulateChatCompletion, CHAT_COMPLETION_READABLE_STREAM_MESSAGE_PREFIX, MAX_STREAM_CHOICES, MAX_STREAM_TOOL_CALLS, MAX_PARTIAL_JSON_BYTES, MAX_PARTIAL_JSON_FRAGMENTS, MAX_PARTIAL_JSON_DEPTH, MAX_PARTIAL_JSON_PARSE_WORK, EAGER_PARTIAL_JSON_BYTES, MAX_SERIALIZED_PARSER_SCHEMA_NODES, stringifyParserSchemaValue, MAX_SERIALIZED_PARSER_SCHEMA_BYTES, MAX_SERIALIZED_PARSER_SCHEMA_DEPTH, OMITTED_SERIALIZED_PARSER_VALUE, UNSAFE_SERIALIZED_PARSER_VALUE, ChatCompletionStream;
@@ -7881,7 +7996,7 @@ var init_ChatCompletionStream = __esm({
                 arguments_delta: toolCallDelta.arguments_delta
               });
             } else if (toolCallSnapshot.type !== "custom") {
-              assertNever(toolCallSnapshot);
+              assertNever2(toolCallSnapshot);
             }
           }
         }
@@ -7934,7 +8049,7 @@ var init_ChatCompletionStream = __esm({
             parsed_arguments: parsedArguments
           });
         } else if (toolCallSnapshot.type !== "custom") {
-          assertNever(toolCallSnapshot);
+          assertNever2(toolCallSnapshot);
         }
       }, _ChatCompletionStream_emitContentDoneEvents = function _ChatCompletionStream_emitContentDoneEvents2(choiceSnapshot) {
         const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
@@ -17750,7 +17865,7 @@ function stabilizeAssistantStreamEvent(event) {
     exposedEvent: ordinaryEvent ? event : { event: eventType, data: stableData }
   };
 }
-function assertNever2(_x) {
+function assertNever3(_x) {
   return _x;
 }
 var _AssistantStream_instances, _AssistantStream_runStepSnapshots, _AssistantStream_runStepIDOwners, _AssistantStream_activeRunStepID, _AssistantStream_messageSnapshots, _AssistantStream_messageIDOwners, _AssistantStream_messageSnapshot, _AssistantStream_activeMessageID, _AssistantStream_finalRun, _AssistantStream_currentContentIndex, _AssistantStream_currentContent, _AssistantStream_currentToolCallIndex, _AssistantStream_currentToolCall, _AssistantStream_currentEvent, _AssistantStream_currentRunSnapshot, _AssistantStream_currentRunStepSnapshot, _AssistantStream_addEvent, _AssistantStream_endRequest, _AssistantStream_validateRunStepEvent, _AssistantStream_reserveRunStepAlias, _AssistantStream_validateMessageEvent, _AssistantStream_reserveMessageAlias, _AssistantStream_handleMessage, _AssistantStream_handleRunStep, _AssistantStream_emitExposed, _AssistantStream_handleEvent, _AssistantStream_accumulateRunStep, _AssistantStream_accumulateMessage, _AssistantStream_accumulateContent, _AssistantStream_handleRun, AssistantStream;
@@ -17822,10 +17937,10 @@ var init_AssistantStream = __esm({
         }));
         return runner;
       }
-      async _createToolAssistantStream(run, runId, params, options) {
+      async _createToolAssistantStream(run2, runId, params, options) {
         this._listenForAbort(options?.signal);
         const body = { ...params, stream: true };
-        const stream = await run.submitToolOutputs(runId, body, {
+        const stream = await run2.submitToolOutputs(runId, body, {
           ...options,
           signal: this.controller.signal
         });
@@ -17910,10 +18025,10 @@ var init_AssistantStream = __esm({
         }
         return this._addRun(__classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
       }
-      async _createAssistantStream(run, threadId, params, options) {
+      async _createAssistantStream(run2, threadId, params, options) {
         this._listenForAbort(options?.signal);
         const body = { ...params, stream: true };
-        const stream = await run.create(threadId, body, { ...options, signal: this.controller.signal });
+        const stream = await run2.create(threadId, body, { ...options, signal: this.controller.signal });
         this._connected();
         for await (const event of stream) {
           __classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
@@ -17930,9 +18045,9 @@ var init_AssistantStream = __esm({
       static accumulateDelta(acc, delta) {
         return accumulateAssistantStreamDelta(acc, delta);
       }
-      _addRun(run) {
-        __classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_emitExposed).call(this, "run", run);
-        return run;
+      _addRun(run2) {
+        __classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_emitExposed).call(this, "run", run2);
+        return run2;
       }
       async _threadAssistantStream(params, thread, options) {
         return await this._createThreadAssistantStream(thread, params, options);
@@ -18047,7 +18162,7 @@ var init_AssistantStream = __esm({
           throw new APIError(void 0, stableEvent.data, void 0, void 0);
         }
         default: {
-          assertNever2(stableEvent);
+          assertNever3(stableEvent);
         }
       }
     }, _AssistantStream_endRequest = function _AssistantStream_endRequest2() {
@@ -18680,8 +18795,8 @@ var init_threads2 = __esm({
        * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
        */
       async createAndRunPoll(body, options) {
-        const run = await this.createAndRun(body, options);
-        return await this.runs.poll(run.id, { thread_id: run.thread_id }, options);
+        const run2 = await this.createAndRun(body, options);
+        return await this.runs.poll(run2.id, { thread_id: run2.thread_id }, options);
       }
       /**
        * Create a thread and stream the run back
@@ -21531,7 +21646,7 @@ function getShellOutputContent(snapshot, output, commandIndex) {
 function createSupportedResponseEventTypes(eventTypes) {
   return new Set(eventTypes);
 }
-function assertNever3(_value) {
+function assertNever4(_value) {
   throw new OpenAIError("Unhandled response stream event: unknown");
 }
 function sanitizeResponseEvent(event) {
@@ -21539,14 +21654,14 @@ function sanitizeResponseEvent(event) {
   try {
     descriptor = Object.getOwnPropertyDescriptor(event, "type");
   } catch {
-    return assertNever3(event);
+    return assertNever4(event);
   }
   const type = descriptor?.value;
   if (
     // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Validate untrusted streamed item identifiers and discriminators before mutating the response snapshot.
     typeof type !== "string" || !supportedResponseEventTypes.has(type)
   ) {
-    return assertNever3(event);
+    return assertNever4(event);
   }
   const stableValues = /* @__PURE__ */ new Map([["type", type]]);
   const itemScoped = type === "response.output_item.added" || type === "response.output_item.done" || type === "response.content_part.added" || type === "response.content_part.done" || type === "response.shell_call_command.added" || type === "response.shell_call_command.delta" || type === "response.shell_call_command.done" || hasOwn(expectedOutputItemTypes, type);
@@ -21562,7 +21677,7 @@ function sanitizeResponseEvent(event) {
         stableValues.set("part", structuredClone(event.part));
       }
     } catch {
-      return assertNever3(event);
+      return assertNever4(event);
     }
   }
   return new Proxy(event, {
@@ -22198,7 +22313,7 @@ function accumulateResponseWithContext(event, snapshot, context, rejectInvalidSh
   if (isResponseLifecycleEvent(dispatchEvent)) {
     return cloneValidatedResponse(context, dispatchEvent.response);
   }
-  return assertNever3(dispatchEvent);
+  return assertNever4(dispatchEvent);
 }
 var responseOutputIdentityIndexes, expectedOutputItemTypes, supportedResponseEventTypes, responseEventRoutingFields;
 var init_response_accumulator = __esm({
@@ -24540,8 +24655,8 @@ var init_realtime_credentials = __esm({
 function isProviderTimeoutError(error) {
   return error instanceof APIConnectionTimeoutError || error instanceof Error && providerTimeoutKey in error && error[providerTimeoutKey] === true;
 }
-function configureProvider(provider2) {
-  const definition = providerDefinitions.get(provider2);
+function configureProvider(provider) {
+  const definition = providerDefinitions.get(provider);
   if (!definition) {
     throw new Error("Invalid provider. Providers must be created with createProvider().");
   }
@@ -24730,9 +24845,9 @@ var init_client = __esm({
         const { credential, options: normalizedOptions } = normalizeX509CredentialOptions(clientOptions);
         clientOptions = normalizedOptions;
         const residencyBaseURL = resolveDataResidency(clientOptions);
-        const provider2 = clientOptions.provider;
-        const { baseURL = provider2 ? null : readEnv("OPENAI_BASE_URL"), dataResidency: _dataResidency, [inheritedDataResidencySelection]: inheritedResidencySelection = false, apiKey = provider2 ? null : readEnv("OPENAI_API_KEY") ?? null, adminAPIKey = provider2 ? null : readEnv("OPENAI_ADMIN_KEY") ?? null, organization = provider2 ? null : readEnv("OPENAI_ORG_ID") ?? null, project = provider2 ? null : readEnv("OPENAI_PROJECT_ID") ?? null, webhookSecret = readEnv("OPENAI_WEBHOOK_SECRET") ?? null, workloadIdentity, x509Transport, credential: _credential, ...opts } = clientOptions;
-        if (provider2) {
+        const provider = clientOptions.provider;
+        const { baseURL = provider ? null : readEnv("OPENAI_BASE_URL"), dataResidency: _dataResidency, [inheritedDataResidencySelection]: inheritedResidencySelection = false, apiKey = provider ? null : readEnv("OPENAI_API_KEY") ?? null, adminAPIKey = provider ? null : readEnv("OPENAI_ADMIN_KEY") ?? null, organization = provider ? null : readEnv("OPENAI_ORG_ID") ?? null, project = provider ? null : readEnv("OPENAI_PROJECT_ID") ?? null, webhookSecret = readEnv("OPENAI_WEBHOOK_SECRET") ?? null, workloadIdentity, x509Transport, credential: _credential, ...opts } = clientOptions;
+        if (provider) {
           const conflictingOptions = ["apiKey", "adminAPIKey", "workloadIdentity", "x509Transport", "baseURL", "dataResidency"].filter((key) => (key === "workloadIdentity" ? workloadIdentity : clientOptions[key]) != null);
           if (conflictingOptions.length) {
             throw new OpenAIError(`The \`provider\` option cannot be used with ${conflictingOptions.map((key) => `\`${key}\``).join(", ")}. Configure authentication and the base URL through the provider instead.`);
@@ -24741,7 +24856,7 @@ var init_client = __esm({
         const identity = isX509WorkloadIdentity(workloadIdentity) ? { x509: workloadIdentity, legacy: void 0 } : { x509: void 0, legacy: workloadIdentity };
         const x509Identity = identity.x509;
         const usesX509Identity = x509Identity !== void 0;
-        const providerRuntime = provider2 ? configureProvider(provider2) : void 0;
+        const providerRuntime = provider ? configureProvider(provider) : void 0;
         const options = {
           apiKey,
           adminAPIKey,
@@ -24750,7 +24865,7 @@ var init_client = __esm({
           webhookSecret,
           workloadIdentity,
           x509Transport,
-          provider: provider2,
+          provider,
           ...opts,
           baseURL: providerRuntime?.baseURL ?? residencyBaseURL ?? (baseURL || (usesX509Identity ? X509_API_BASE_URL : `https://api.openai.com/v1`))
         };
@@ -24790,7 +24905,7 @@ var init_client = __esm({
         this.maxRetries = __classPrivateFieldGet(this, _OpenAI_instances, "m", _OpenAI_normalizeRetries).call(this, options.maxRetries);
         this.fetch = options.fetch ?? getDefaultFetch();
         __classPrivateFieldSet(this, _OpenAI_encoder, FallbackEncoder, "f");
-        const customHeadersEnv = provider2 || credential ? void 0 : readEnv("OPENAI_CUSTOM_HEADERS");
+        const customHeadersEnv = provider || credential ? void 0 : readEnv("OPENAI_CUSTOM_HEADERS");
         if (customHeadersEnv) {
           const parsed = {};
           for (const line of customHeadersEnv.split("\n")) {
@@ -24843,7 +24958,7 @@ var init_client = __esm({
           project: this.project,
           webhookSecret: this.webhookSecret
         };
-        const { credential, provider: provider2 } = prepareX509ClientClone(inheritedOptions, options, __classPrivateFieldGet(this, _OpenAI_x509Credential, "f"), x509Authentication !== void 0);
+        const { credential, provider } = prepareX509ClientClone(inheritedOptions, options, __classPrivateFieldGet(this, _OpenAI_x509Credential, "f"), x509Authentication !== void 0);
         if (residencyBaseURL !== void 0) {
           delete inheritedOptions.baseURL;
         }
@@ -24851,11 +24966,11 @@ var init_client = __esm({
           ...inheritedOptions,
           ...options,
           credential,
-          provider: provider2,
-          [inheritedDataResidencySelection]: __classPrivateFieldGet(this, _OpenAI_explicitDataResidency, "f") && residencyBaseURL === void 0 && !hasOwn(options, "baseURL") && options.credential === void 0 && !provider2
+          provider,
+          [inheritedDataResidencySelection]: __classPrivateFieldGet(this, _OpenAI_explicitDataResidency, "f") && residencyBaseURL === void 0 && !hasOwn(options, "baseURL") && options.credential === void 0 && !provider
         };
         const client2 = new this.constructor(clientOptions);
-        if (provider2 && new URL(client2.baseURL).origin !== new URL(this.baseURL).origin) {
+        if (provider && new URL(client2.baseURL).origin !== new URL(this.baseURL).origin) {
           Object.assign(client2._options, {
             defaultHeaders: options.defaultHeaders,
             defaultQuery: options.defaultQuery,
@@ -26181,12 +26296,6 @@ var init_client = __esm({
   }
 });
 
-// node_modules/openai/lib/responses/ResponseInputItems.mjs
-var init_ResponseInputItems = __esm({
-  "node_modules/openai/lib/responses/ResponseInputItems.mjs"() {
-  }
-});
-
 // node_modules/openai/internal/runner-diagnostics.mjs
 var init_runner_diagnostics = __esm({
   "node_modules/openai/internal/runner-diagnostics.mjs"() {
@@ -26265,32 +26374,78 @@ var init_openai = __esm({
   }
 });
 
-// llm.js
-async function testLLM() {
-  const apiKey = await getApiKey();
+// orchestration/api.js
+async function connect() {
+  const { apiKey } = await chrome.storage.local.get("apiKey");
   if (!apiKey) {
-    return "failed";
+    throw new Error("API key not found");
   }
   client = new OpenAI({
-    apiKey: apiKey.apiKey,
+    apiKey,
     dangerouslyAllowBrowser: true
   });
-  const response = await client.responses.create({
-    model: "gpt-6-astra",
-    input: "Write a one-sentence bedtime story about a unicorn."
-  });
-  return response.output_text;
+  return client;
 }
-async function getApiKey() {
-  const apiKey = await chrome.storage.local.get(["apiKey"]);
-  return apiKey;
+function getClient() {
+  if (!client) {
+    throw new Error("API client not initialized. Call connect() first.");
+  }
+  return client;
 }
 var client;
+var init_api = __esm({
+  "orchestration/api.js"() {
+    init_openai();
+    client = null;
+  }
+});
+
+// orchestration/llm.js
+async function testLLM() {
+  let input = [{ role: "user", content: TEST_PROMPT }];
+  while (true) {
+    const response = await sendMessage(input);
+    const calls = response.output.filter(
+      (item) => item.type === "function_call"
+    );
+    console.log("Model output:", response.output);
+    console.log("Function calls:", calls.length);
+    if (calls.length === 0) {
+      console.log("Final answer:", response.output_text);
+      return response.output_text;
+    }
+    input.push(...toResponseInputItems(response.output));
+    const results = await Promise.all(
+      calls.map(async (call) => ({
+        type: "function_call_output",
+        call_id: call.call_id,
+        output: String(
+          await run(call.name, JSON.parse(call.arguments))
+        )
+      }))
+    );
+    input.push(...results);
+  }
+}
+async function sendMessage(input) {
+  const client2 = getClient();
+  return await client2.responses.create({
+    model: "gpt-6-astra",
+    // instructions: SYSTEM_PROMPT,
+    input,
+    tools: [
+      WEB_SEARCH,
+      ...TOOL_DEFS
+    ],
+    tool_choice: "auto"
+  });
+}
 var init_llm = __esm({
-  "llm.js"() {
+  "orchestration/llm.js"() {
     init_mini_prompt();
     init_mini_tools();
-    init_openai();
+    init_ResponseInputItems();
+    init_api();
   }
 });
 
@@ -26301,18 +26456,18 @@ var require_main = __commonJS({
     init_mini_tracker();
     init_mini_catalog();
     init_llm();
-    init_mini_tools();
+    init_api();
     async function decide(events) {
       const ids = await per_id(events);
       let recommendations;
       if (Object.keys(ids).length >= 0) {
         recommendations = await searchCatalog("trop_onglets");
       }
-      recommendations = await save_recommendations(recommendations);
+      recommendations = await reshape_recommendations(recommendations);
       await chrome.storage.local.set({ recommendations });
       return recommendations;
     }
-    async function save_recommendations(recommendations) {
+    async function reshape_recommendations(recommendations) {
       return Object.fromEntries(
         recommendations.map(({ id, name, needs, summary, url, shortcut }) => [
           id,
@@ -26320,29 +26475,13 @@ var require_main = __commonJS({
         ])
       );
     }
-    async function runTests() {
-      console.log("--- D\xC9BUT DU TEST DU TOOL RUNNER ---");
-      const { run, state: state2 } = createToolRunner2();
-      console.log("Test de search_catalog...");
-      const catalogResult = await run("search_catalog", { needs: "trop_onglets" });
-      console.log("R\xE9sultat :", catalogResult);
-      console.log("Test de get_installed_extensions...");
-      const installedResult = await run("get_installed_extensions", {});
-      console.log("R\xE9sultat :", installedResult);
-      console.log("Test de submit_recommendations...");
-      await run("submit_recommendations", {
-        recommendations: [{ id: "test_123", reason: "Raison de test" }],
-        notes: "Test r\xE9ussi"
-      });
-      console.log("--- \xC9TAT FINAL DU RUNNER ---");
-      console.log(state2);
-    }
     async function main() {
       syncCatalog();
       track_tabs();
+      await connect();
       console.log("trackers are on");
       const events = await load_events();
-      console.log("events are fetched");
+      console.log("events are sorted");
       const [ids, evts, urls] = await Promise.all([
         per_id(events),
         per_event(events),
@@ -26351,7 +26490,6 @@ var require_main = __commonJS({
       console.log({ ids, evts, urls });
       const recommendations = await decide(events);
       console.log("has decided this : ", recommendations);
-      await runTests();
       const sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       let res = "failed";
       while (res == "failed") {
