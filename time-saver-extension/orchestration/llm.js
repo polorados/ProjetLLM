@@ -1,14 +1,14 @@
-import { SYSTEM_PROMPT } from '../app/mini_prompt.js';
-import { WEB_SEARCH, FIRST_MESSAGE, TOOL_DEFS, run, TEST_PROMPT } from '../app/mini_tools.js';
+import { SYSTEM_PROMPT } from './mini_prompt.js';
+import { WEB_SEARCH, FIRST_MESSAGE, TOOL_DEFS, run, TEST_PROMPT } from './mini_tools.js';
 import { toResponseInputItems } from "openai/lib/responses/ResponseInputItems";
 import { getClient } from './api.js';
 
 
 export async function testLLM() {
-    let input = [{ role: "user", content: TEST_PROMPT }];
+    let context = [{ role: "user", content: TEST_PROMPT }];
 
     while (true) {
-        const response = await sendMessage(input);
+        const response = await sendMessage(context);
 
         const calls = response.output.filter(
             item => item.type === "function_call"
@@ -22,7 +22,7 @@ export async function testLLM() {
             return response.output_text;
         }
 
-        input.push(...toResponseInputItems(response.output));
+        context.push(...toResponseInputItems(response.output));
 
         const results = await Promise.all(
             calls.map(async call => ({
@@ -34,7 +34,7 @@ export async function testLLM() {
             }))
         );
 
-        input.push(...results);
+        context.push(...results);
     }
 }
 

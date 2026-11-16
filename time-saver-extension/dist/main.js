@@ -40,7 +40,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// data_aggregator.js
+// app/data_aggregator.js
 async function load_events() {
   const all = await chrome.storage.local.get(null);
   return Object.entries(all).filter(([key]) => /^event-tab-\d+-[a-f0-9]{4}$/i.test(key)).map(([key, record]) => ({
@@ -73,7 +73,7 @@ async function per_url(events) {
   return [...urls];
 }
 var init_data_aggregator = __esm({
-  "data_aggregator.js"() {
+  "app/data_aggregator.js"() {
   }
 });
 
@@ -121,13 +121,13 @@ var init_mini_catalog = __esm({
   }
 });
 
-// app/mini_prompt.js
+// orchestration/mini_prompt.js
 var init_mini_prompt = __esm({
-  "app/mini_prompt.js"() {
+  "orchestration/mini_prompt.js"() {
   }
 });
 
-// app/mini_tools.js
+// orchestration/mini_tools.js
 async function run(name, input) {
   const impls = {
     async helloWorld({ somethingToSay }) {
@@ -142,7 +142,7 @@ async function run(name, input) {
 }
 var TOOL_DEFS, WEB_SEARCH, TEST_PROMPT;
 var init_mini_tools = __esm({
-  "app/mini_tools.js"() {
+  "orchestration/mini_tools.js"() {
     TOOL_DEFS = [
       {
         type: "function",
@@ -26402,9 +26402,9 @@ var init_api = __esm({
 
 // orchestration/llm.js
 async function testLLM() {
-  let input = [{ role: "user", content: TEST_PROMPT }];
+  let context = [{ role: "user", content: TEST_PROMPT }];
   while (true) {
-    const response = await sendMessage(input);
+    const response = await sendMessage(context);
     const calls = response.output.filter(
       (item) => item.type === "function_call"
     );
@@ -26414,7 +26414,7 @@ async function testLLM() {
       console.log("Final answer:", response.output_text);
       return response.output_text;
     }
-    input.push(...toResponseInputItems(response.output));
+    context.push(...toResponseInputItems(response.output));
     const results = await Promise.all(
       calls.map(async (call) => ({
         type: "function_call_output",
@@ -26424,7 +26424,7 @@ async function testLLM() {
         )
       }))
     );
-    input.push(...results);
+    context.push(...results);
   }
 }
 async function sendMessage(input) {
