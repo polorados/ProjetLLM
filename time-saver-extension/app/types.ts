@@ -28,15 +28,15 @@ export type PerUrlResult = string[];
 
 export type Need =
   | "trop_onglets"
-  // | "aller_retour"
-  // | "copier_coller"
-  // | "ouverture_quotidienne"
-  // | "traduction"
-  // | "lecture_longue"
-  // | "raccourcis_clavier";
+  | "aller_retour"
+  | "copier_coller"
+  | "ouverture_quotidienne"
+  | "traduction"
+  | "lecture_longue"
+  | "raccourcis_clavier";
 
 export interface CatalogEntry {
-  needs: Need[];
+  need: Need[];
 }
 
 export interface CatalogData {

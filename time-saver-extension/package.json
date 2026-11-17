@@ -4,8 +4,9 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "build": "npm run typecheck && ttsx build.ts",
-    "typecheck": "ttsc --noEmit"
+    "build": "npm run typecheck && ttsx build.ts && ttsx orchestration/build_tools.ts",
+    "typecheck": "ttsc --noEmit",
+    "build:tools": "ttsx orchestration/build_tools.ts"
   },
   "keywords": [],
   "author": "",

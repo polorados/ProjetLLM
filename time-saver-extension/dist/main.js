@@ -103,7 +103,7 @@ async function per_url(events) {
   for (const { url } of events) {
     if (url) urls.add(url);
   }
-  console.log("per url result : ", urls);
+  console.log("per url result : ", [...urls]);
   return [...urls];
 }
 var init_data_aggregator = __esm({
@@ -146,7 +146,9 @@ async function getCatalog() {
 }
 async function searchCatalog(need) {
   const catalog = await getCatalog();
-  return catalog.entries.filter((e) => e.needs.includes(need));
+  const out = catalog.entries.filter((e) => e.needs.includes(need));
+  console.log("Result of searchCatalog : ", out);
+  return out;
 }
 var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY;
 var init_mini_catalog = __esm({
@@ -538,8 +540,9 @@ async function run(name, input) {
     async per_url({ events } = {}) {
       return await per_url(events);
     },
-    async searchCatalog({ needs }) {
-      return await searchCatalog(needs);
+    async searchCatalog({ need }) {
+      console.log("Search catalog is executed with input : ", need);
+      return await searchCatalog(need);
     },
     async get_installed_extensions() {
       return await getInstalled();
@@ -547,6 +550,7 @@ async function run(name, input) {
   };
   const impl = impls[name];
   if (!impl) {
+    console.log("Tools Not Found");
     throw new Error(`Unknown tool: ${name}`);
   }
   return await impl(input);

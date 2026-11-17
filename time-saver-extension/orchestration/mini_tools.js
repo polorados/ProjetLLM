@@ -22,8 +22,9 @@ export async function run(name, input) {
             return await per_url(events);
         },
 
-        async searchCatalog({ needs }) {
-            return await searchCatalog(needs);
+        async searchCatalog({ need }) {
+            console.log("Search catalog is executed with input : ", need);
+            return await searchCatalog(need);
         },
 
         async get_installed_extensions() {
@@ -34,6 +35,7 @@ export async function run(name, input) {
     const impl = impls[name];
 
     if (!impl) {
+        console.log("Tools Not Found")
         throw new Error(`Unknown tool: ${name}`);
     }
 
