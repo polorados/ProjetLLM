@@ -1,5 +1,4 @@
-import { SYSTEM_PROMPT } from './mini_prompt.js';
-import { WEB_SEARCH, FIRST_MESSAGE, TOOL_DEFS, run, TEST_PROMPT } from './mini_tools.js';
+import { WEB_SEARCH, TOOL_DEFS, run, TEST_PROMPT } from './mini_tools.js';
 import { toResponseInputItems } from "openai/lib/responses/ResponseInputItems";
 import { getClient } from './api.js';
 
