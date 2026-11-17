@@ -1,9 +1,9 @@
 import { build } from "esbuild";
 import ttsc from "@ttsc/unplugin/esbuild";
-// import { generateTools } from "./orchestration/tools.ts"
+// import { generateFunction_Tools } from "./orchestration/tools.ts"
 
 async function main() {
-  // await generateTools();
+  // await generateFunction_Tools();
   await build({
     entryPoints: ["main.js"],
     bundle: true,

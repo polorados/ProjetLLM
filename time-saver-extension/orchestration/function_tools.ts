@@ -2,7 +2,7 @@ import { per_id, per_url, per_event } from "../app/data_aggregator";
 import { searchCatalog } from "../app/mini_catalog";
 import { type TabEvent, Need } from "../app/types";
 
-export class Tools {
+export class Function_Tools {
     /** Aggregates events by tab ID. */
     per_id = async (params: { events: TabEvent[] | null }) => ({
         result: await per_id(params.events ?? undefined)

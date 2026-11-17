@@ -1,12 +1,15 @@
 import OpenAI from "openai";
 
 let client = null;
+let apiKey;
 
 export async function connect() {
-    const { apiKey } = await chrome.storage.local.get("apiKey");
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    if (!apiKey) {
-        throw new Error("API key not found");
+    while (!apiKey) {
+        await sleep(1000);
+        console.log("trying to get the api key")
+        apiKey = await chrome.storage.local.get("apiKey");
     }
 
     client = new OpenAI({

@@ -160,531 +160,45 @@ var init_mini_catalog = __esm({
   }
 });
 
-// orchestration/tools.json
-var tools_default;
-var init_tools = __esm({
-  "orchestration/tools.json"() {
-    tools_default = [
-      {
-        type: "function",
-        name: "per_id",
-        description: "Aggregates events by tab ID.",
-        parameters: {
-          type: "object",
-          properties: {
-            events: {
-              anyOf: [
-                {
-                  type: "null"
-                },
-                {
-                  type: "array",
-                  items: {
-                    $ref: "#/$defs/TabEvent"
-                  }
-                }
-              ]
-            }
-          },
-          required: [
-            "events"
-          ],
-          additionalProperties: false,
-          $defs: {
-            EventName: {
-              type: "string",
-              enum: [
-                "activated",
-                "closed",
-                "created",
-                "updated"
-              ]
-            },
-            TabEvent: {
-              type: "object",
-              properties: {
-                time: {
-                  type: "number"
-                },
-                name: {
-                  $ref: "#/$defs/EventName"
-                },
-                id: {
-                  type: "number"
-                },
-                url: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "string"
-                    }
-                  ]
-                },
-                info: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "object",
-                      properties: {
-                        title: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "string"
-                            }
-                          ]
-                        },
-                        status: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "number"
-                            }
-                          ]
-                        }
-                      },
-                      required: [
-                        "title",
-                        "status"
-                      ],
-                      additionalProperties: false
-                    }
-                  ]
-                }
-              },
-              required: [
-                "time",
-                "name",
-                "id",
-                "url",
-                "info"
-              ],
-              additionalProperties: false
-            }
-          }
-        },
-        strict: true
-      },
-      {
-        type: "function",
-        name: "per_url",
-        description: "Aggregates events by URL.",
-        parameters: {
-          type: "object",
-          properties: {
-            events: {
-              anyOf: [
-                {
-                  type: "null"
-                },
-                {
-                  type: "array",
-                  items: {
-                    $ref: "#/$defs/TabEvent"
-                  }
-                }
-              ]
-            }
-          },
-          required: [
-            "events"
-          ],
-          additionalProperties: false,
-          $defs: {
-            EventName: {
-              type: "string",
-              enum: [
-                "activated",
-                "closed",
-                "created",
-                "updated"
-              ]
-            },
-            TabEvent: {
-              type: "object",
-              properties: {
-                time: {
-                  type: "number"
-                },
-                name: {
-                  $ref: "#/$defs/EventName"
-                },
-                id: {
-                  type: "number"
-                },
-                url: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "string"
-                    }
-                  ]
-                },
-                info: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "object",
-                      properties: {
-                        title: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "string"
-                            }
-                          ]
-                        },
-                        status: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "number"
-                            }
-                          ]
-                        }
-                      },
-                      required: [
-                        "title",
-                        "status"
-                      ],
-                      additionalProperties: false
-                    }
-                  ]
-                }
-              },
-              required: [
-                "time",
-                "name",
-                "id",
-                "url",
-                "info"
-              ],
-              additionalProperties: false
-            }
-          }
-        },
-        strict: true
-      },
-      {
-        type: "function",
-        name: "per_event",
-        description: "Aggregates events by event type.",
-        parameters: {
-          type: "object",
-          properties: {
-            events: {
-              anyOf: [
-                {
-                  type: "null"
-                },
-                {
-                  type: "array",
-                  items: {
-                    $ref: "#/$defs/TabEvent"
-                  }
-                }
-              ]
-            }
-          },
-          required: [
-            "events"
-          ],
-          additionalProperties: false,
-          $defs: {
-            EventName: {
-              type: "string",
-              enum: [
-                "activated",
-                "closed",
-                "created",
-                "updated"
-              ]
-            },
-            TabEvent: {
-              type: "object",
-              properties: {
-                time: {
-                  type: "number"
-                },
-                name: {
-                  $ref: "#/$defs/EventName"
-                },
-                id: {
-                  type: "number"
-                },
-                url: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "string"
-                    }
-                  ]
-                },
-                info: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "object",
-                      properties: {
-                        title: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "string"
-                            }
-                          ]
-                        },
-                        status: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "number"
-                            }
-                          ]
-                        }
-                      },
-                      required: [
-                        "title",
-                        "status"
-                      ],
-                      additionalProperties: false
-                    }
-                  ]
-                }
-              },
-              required: [
-                "time",
-                "name",
-                "id",
-                "url",
-                "info"
-              ],
-              additionalProperties: false
-            }
-          }
-        },
-        strict: true
-      },
-      {
-        type: "function",
-        name: "searchCatalog",
-        description: "Searches the feature catalog.",
-        parameters: {
-          type: "object",
-          properties: {
-            need: {
-              $ref: "#/$defs/Need"
-            }
-          },
-          required: [
-            "need"
-          ],
-          additionalProperties: false,
-          $defs: {
-            Need: {
-              type: "string",
-              enum: [
-                "aller_retour",
-                "copier_coller",
-                "lecture_longue",
-                "ouverture_quotidienne",
-                "raccourcis_clavier",
-                "traduction",
-                "trop_onglets"
-              ]
-            }
-          }
-        },
-        strict: true
+// orchestration/function_tools.ts
+var Function_Tools;
+var init_function_tools = __esm({
+  "orchestration/function_tools.ts"() {
+    "use strict";
+    init_data_aggregator();
+    init_mini_catalog();
+    Function_Tools = class {
+      /** Aggregates events by tab ID. */
+      per_id = async (params) => ({
+        result: await per_id(params.events ?? void 0)
+      });
+      /** Aggregates events by URL. */
+      per_url(params) {
+        return { result: per_url(params.events ?? void 0) };
       }
-    ];
+      /** Aggregates events by event type. */
+      per_event(params) {
+        return per_event(params.events ?? void 0);
+      }
+      /** Searches the feature catalog. */
+      searchCatalog(params) {
+        return { result: searchCatalog(params.need) };
+      }
+    };
   }
 });
 
 // orchestration/mini_tools.js
-async function run(name, input) {
-  const impls = {
-    async helloWorld({ somethingToSay }) {
-      return `Hello, ${somethingToSay}!`;
-    },
-    async per_id({ events } = {}) {
-      return await per_id(events);
-    },
-    async per_event({ events } = {}) {
-      return await per_event(events);
-    },
-    async per_url({ events } = {}) {
-      return await per_url(events);
-    },
-    async searchCatalog({ need }) {
-      console.log("Search catalog is executed with input : ", need);
-      return await searchCatalog(need);
-    },
-    async get_installed_extensions() {
-      return await getInstalled();
-    }
-  };
-  const impl = impls[name];
-  if (!impl) {
-    console.log("Tools Not Found");
-    throw new Error(`Unknown tool: ${name}`);
-  }
-  return await impl(input);
-}
-var WEB_SEARCH, TEST_PROMPT;
+var functionTools;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
-    init_data_aggregator();
-    init_mini_catalog();
-    init_tools();
-    WEB_SEARCH = {
-      type: "web_search",
-      filters: {
-        allowed_domains: [
-          "chromewebstore.google.com",
-          "developer.chrome.com",
-          "support.google.com"
-        ]
-      }
-    };
-    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
+    init_function_tools();
+    functionTools = new Function_Tools();
   }
 });
 
 // node_modules/openai/lib/responses/ResponseInputItems.mjs
-function toResponseInputItems(items) {
-  const inputItems = [];
-  for (const item of items) {
-    const inputItem = toResponseInputItem(item);
-    if (inputItem) {
-      inputItems.push(inputItem);
-    }
-  }
-  return inputItems;
-}
-function toResponseInputItem(item) {
-  switch (item.type) {
-    case "message": {
-      if (item.role !== "assistant" || !("id" in item) || !Array.isArray(item.content)) {
-        return stripCreatedBy(item);
-      }
-      const content = item.content.map((part) => {
-        if ((part.type === "output_text" || part.type === "refusal") && "parsed" in part) {
-          const { parsed: _parsed, ...inputPart } = part;
-          return inputPart;
-        }
-        return part;
-      });
-      if (content.every((part, index) => part === item.content[index])) {
-        return stripCreatedBy(item);
-      }
-      return { ...stripCreatedBy(item), content };
-    }
-    case "function_call": {
-      const inputItem = stripCreatedBy(item);
-      if (!("parsed_arguments" in inputItem)) {
-        return inputItem;
-      }
-      const { parsed_arguments: _parsedArguments, ...withoutParsedArguments } = inputItem;
-      return withoutParsedArguments;
-    }
-    case "additional_tools": {
-      if (item.role !== "developer") {
-        return null;
-      }
-      return stripCreatedBy(item);
-    }
-    case "shell_call_output": {
-      const output = item.output.map((chunk) => stripCreatedBy(chunk));
-      return {
-        ...stripCreatedBy(item),
-        output
-      };
-    }
-    case "computer_call_output": {
-      const { created_by: _createdBy, ...withoutCreatedBy } = item;
-      if (withoutCreatedBy.status === "failed") {
-        return null;
-      }
-      return withoutCreatedBy;
-    }
-    case "custom_tool_call_output": {
-      if ("status" in item && item.status !== "completed") {
-        return null;
-      }
-      const { created_by: _createdBy, status: _status, ...inputItem } = item;
-      return inputItem;
-    }
-    case "apply_patch_call":
-    case "apply_patch_call_output":
-    case "code_interpreter_call":
-    case "compaction":
-    case "compaction_trigger":
-    case "computer_call":
-    case "configuration_update":
-    case "custom_tool_call":
-    case "file_search_call":
-    case "function_call_output":
-    case "image_generation_call":
-    case "item_reference":
-    case "local_shell_call":
-    case "local_shell_call_output":
-    case "mcp_approval_request":
-    case "mcp_approval_response":
-    case "mcp_call":
-    case "mcp_list_tools":
-    case "program":
-    case "program_output":
-    case "reasoning":
-    case "shell_call":
-    case "tool_search_call":
-    case "tool_search_output":
-    case "web_search_call":
-    case null:
-    case void 0: {
-      return stripCreatedBy(item);
-    }
-    default: {
-      return assertNever(item);
-    }
-  }
-}
-function stripCreatedBy(item) {
-  if (!("created_by" in item)) {
-    return item;
-  }
-  const { created_by: _createdBy, ...rest } = item;
-  return rest;
-}
-function assertNever(value) {
-  const type = value.type;
-  throw new TypeError(`Unsupported response item type: ${String(type)}`);
-}
 var init_ResponseInputItems = __esm({
   "node_modules/openai/lib/responses/ResponseInputItems.mjs"() {
   }
@@ -4230,8 +3744,8 @@ function normalizeX509CredentialOptions(options) {
     }
   };
 }
-function overridesOrdinaryAuthentication({ apiKey, adminAPIKey }) {
-  return apiKey !== null && apiKey !== void 0 || adminAPIKey !== null && adminAPIKey !== void 0;
+function overridesOrdinaryAuthentication({ apiKey: apiKey2, adminAPIKey }) {
+  return apiKey2 !== null && apiKey2 !== void 0 || adminAPIKey !== null && adminAPIKey !== void 0;
 }
 function prepareProviderClone(inherited, overrides) {
   const inheritedProvider = inherited.provider;
@@ -8122,7 +7636,7 @@ function isCompleteAudio(audio) {
 function assertIsEmpty(obj) {
   void obj;
 }
-function assertNever2(_x) {
+function assertNever(_x) {
   return _x;
 }
 var _ChatCompletionStream_instances, _ChatCompletionStream_params, _ChatCompletionStream_rejectsUnfinishedTurns, _ChatCompletionStream_audioDoneChoiceIndexes, _ChatCompletionStream_choiceEventStates, _ChatCompletionStream_currentChatCompletionSnapshot, _ChatCompletionStream_hasAutoParseableTool, _ChatCompletionStream_partialJSONParseBudget, _ChatCompletionStream_beginRequest, _ChatCompletionStream_getChoiceEventState, _ChatCompletionStream_addChunk, _ChatCompletionStream_emitToolCallDoneEvent, _ChatCompletionStream_emitContentDoneEvents, _ChatCompletionStream_validateStructuredSnapshots, _ChatCompletionStream_endRequest, _ChatCompletionStream_accumulateChatCompletion, CHAT_COMPLETION_READABLE_STREAM_MESSAGE_PREFIX, MAX_STREAM_CHOICES, MAX_STREAM_TOOL_CALLS, MAX_PARTIAL_JSON_BYTES, MAX_PARTIAL_JSON_FRAGMENTS, MAX_PARTIAL_JSON_DEPTH, MAX_PARTIAL_JSON_PARSE_WORK, EAGER_PARTIAL_JSON_BYTES, MAX_SERIALIZED_PARSER_SCHEMA_NODES, stringifyParserSchemaValue, MAX_SERIALIZED_PARSER_SCHEMA_BYTES, MAX_SERIALIZED_PARSER_SCHEMA_DEPTH, OMITTED_SERIALIZED_PARSER_VALUE, UNSAFE_SERIALIZED_PARSER_VALUE, ChatCompletionStream;
@@ -8396,7 +7910,7 @@ var init_ChatCompletionStream = __esm({
                 arguments_delta: toolCallDelta.arguments_delta
               });
             } else if (toolCallSnapshot.type !== "custom") {
-              assertNever2(toolCallSnapshot);
+              assertNever(toolCallSnapshot);
             }
           }
         }
@@ -8449,7 +7963,7 @@ var init_ChatCompletionStream = __esm({
             parsed_arguments: parsedArguments
           });
         } else if (toolCallSnapshot.type !== "custom") {
-          assertNever2(toolCallSnapshot);
+          assertNever(toolCallSnapshot);
         }
       }, _ChatCompletionStream_emitContentDoneEvents = function _ChatCompletionStream_emitContentDoneEvents2(choiceSnapshot) {
         const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
@@ -18265,7 +17779,7 @@ function stabilizeAssistantStreamEvent(event) {
     exposedEvent: ordinaryEvent ? event : { event: eventType, data: stableData }
   };
 }
-function assertNever3(_x) {
+function assertNever2(_x) {
   return _x;
 }
 var _AssistantStream_instances, _AssistantStream_runStepSnapshots, _AssistantStream_runStepIDOwners, _AssistantStream_activeRunStepID, _AssistantStream_messageSnapshots, _AssistantStream_messageIDOwners, _AssistantStream_messageSnapshot, _AssistantStream_activeMessageID, _AssistantStream_finalRun, _AssistantStream_currentContentIndex, _AssistantStream_currentContent, _AssistantStream_currentToolCallIndex, _AssistantStream_currentToolCall, _AssistantStream_currentEvent, _AssistantStream_currentRunSnapshot, _AssistantStream_currentRunStepSnapshot, _AssistantStream_addEvent, _AssistantStream_endRequest, _AssistantStream_validateRunStepEvent, _AssistantStream_reserveRunStepAlias, _AssistantStream_validateMessageEvent, _AssistantStream_reserveMessageAlias, _AssistantStream_handleMessage, _AssistantStream_handleRunStep, _AssistantStream_emitExposed, _AssistantStream_handleEvent, _AssistantStream_accumulateRunStep, _AssistantStream_accumulateMessage, _AssistantStream_accumulateContent, _AssistantStream_handleRun, AssistantStream;
@@ -18562,7 +18076,7 @@ var init_AssistantStream = __esm({
           throw new APIError(void 0, stableEvent.data, void 0, void 0);
         }
         default: {
-          assertNever3(stableEvent);
+          assertNever2(stableEvent);
         }
       }
     }, _AssistantStream_endRequest = function _AssistantStream_endRequest2() {
@@ -22046,7 +21560,7 @@ function getShellOutputContent(snapshot, output, commandIndex) {
 function createSupportedResponseEventTypes(eventTypes) {
   return new Set(eventTypes);
 }
-function assertNever4(_value) {
+function assertNever3(_value) {
   throw new OpenAIError("Unhandled response stream event: unknown");
 }
 function sanitizeResponseEvent(event) {
@@ -22054,14 +21568,14 @@ function sanitizeResponseEvent(event) {
   try {
     descriptor = Object.getOwnPropertyDescriptor(event, "type");
   } catch {
-    return assertNever4(event);
+    return assertNever3(event);
   }
   const type = descriptor?.value;
   if (
     // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Validate untrusted streamed item identifiers and discriminators before mutating the response snapshot.
     typeof type !== "string" || !supportedResponseEventTypes.has(type)
   ) {
-    return assertNever4(event);
+    return assertNever3(event);
   }
   const stableValues = /* @__PURE__ */ new Map([["type", type]]);
   const itemScoped = type === "response.output_item.added" || type === "response.output_item.done" || type === "response.content_part.added" || type === "response.content_part.done" || type === "response.shell_call_command.added" || type === "response.shell_call_command.delta" || type === "response.shell_call_command.done" || hasOwn(expectedOutputItemTypes, type);
@@ -22077,7 +21591,7 @@ function sanitizeResponseEvent(event) {
         stableValues.set("part", structuredClone(event.part));
       }
     } catch {
-      return assertNever4(event);
+      return assertNever3(event);
     }
   }
   return new Proxy(event, {
@@ -22713,7 +22227,7 @@ function accumulateResponseWithContext(event, snapshot, context, rejectInvalidSh
   if (isResponseLifecycleEvent(dispatchEvent)) {
     return cloneValidatedResponse(context, dispatchEvent.response);
   }
-  return assertNever4(dispatchEvent);
+  return assertNever3(dispatchEvent);
 }
 var responseOutputIdentityIndexes, expectedOutputItemTypes, supportedResponseEventTypes, responseEventRoutingFields;
 var init_response_accumulator = __esm({
@@ -25018,13 +24532,13 @@ function validateCapturedAPIKey(client2, credential) {
   return credential;
 }
 async function resolveRealtimeAPIKey(client2, deferCache = false) {
-  let apiKey;
+  let apiKey2;
   const current = {
     client: client2,
-    commit: () => apiKey === void 0 ? client2.apiKey : apiKey
+    commit: () => apiKey2 === void 0 ? client2.apiKey : apiKey2
   };
   const capture = (resolved) => {
-    apiKey = resolved;
+    apiKey2 = resolved;
   };
   const invoke = () => client2._callApiKey(capture);
   const context = client2[realtimeCacheContext] ?? cacheContext;
@@ -25033,10 +24547,10 @@ async function resolveRealtimeAPIKey(client2, deferCache = false) {
   }
   const isProvider = await (context ? context.run(deferCache ? current : void 0, invoke) : invoke());
   return {
-    apiKey: apiKey === void 0 ? client2.apiKey : apiKey,
+    apiKey: apiKey2 === void 0 ? client2.apiKey : apiKey2,
     isProvider,
     commit: () => {
-      const hookKey = current.providerKey !== void 0 && apiKey !== void 0 && apiKey !== current.providerKey ? validateCapturedAPIKey(client2, apiKey) : void 0;
+      const hookKey = current.providerKey !== void 0 && apiKey2 !== void 0 && apiKey2 !== current.providerKey ? validateCapturedAPIKey(client2, apiKey2) : void 0;
       const cached = current.commit();
       return hookKey === void 0 ? validateCapturedAPIKey(client2, cached) : hookKey;
     }
@@ -25246,7 +24760,7 @@ var init_client = __esm({
         clientOptions = normalizedOptions;
         const residencyBaseURL = resolveDataResidency(clientOptions);
         const provider = clientOptions.provider;
-        const { baseURL = provider ? null : readEnv("OPENAI_BASE_URL"), dataResidency: _dataResidency, [inheritedDataResidencySelection]: inheritedResidencySelection = false, apiKey = provider ? null : readEnv("OPENAI_API_KEY") ?? null, adminAPIKey = provider ? null : readEnv("OPENAI_ADMIN_KEY") ?? null, organization = provider ? null : readEnv("OPENAI_ORG_ID") ?? null, project = provider ? null : readEnv("OPENAI_PROJECT_ID") ?? null, webhookSecret = readEnv("OPENAI_WEBHOOK_SECRET") ?? null, workloadIdentity, x509Transport, credential: _credential, ...opts } = clientOptions;
+        const { baseURL = provider ? null : readEnv("OPENAI_BASE_URL"), dataResidency: _dataResidency, [inheritedDataResidencySelection]: inheritedResidencySelection = false, apiKey: apiKey2 = provider ? null : readEnv("OPENAI_API_KEY") ?? null, adminAPIKey = provider ? null : readEnv("OPENAI_ADMIN_KEY") ?? null, organization = provider ? null : readEnv("OPENAI_ORG_ID") ?? null, project = provider ? null : readEnv("OPENAI_PROJECT_ID") ?? null, webhookSecret = readEnv("OPENAI_WEBHOOK_SECRET") ?? null, workloadIdentity, x509Transport, credential: _credential, ...opts } = clientOptions;
         if (provider) {
           const conflictingOptions = ["apiKey", "adminAPIKey", "workloadIdentity", "x509Transport", "baseURL", "dataResidency"].filter((key) => (key === "workloadIdentity" ? workloadIdentity : clientOptions[key]) != null);
           if (conflictingOptions.length) {
@@ -25258,7 +24772,7 @@ var init_client = __esm({
         const usesX509Identity = x509Identity !== void 0;
         const providerRuntime = provider ? configureProvider(provider) : void 0;
         const options = {
-          apiKey,
+          apiKey: apiKey2,
           adminAPIKey,
           organization,
           project,
@@ -25285,10 +24799,10 @@ var init_client = __esm({
             throw new OpenAIError("X.509 workload identity does not support overridden fetch dispatch hooks.");
           }
         }
-        if (apiKey && workloadIdentity) {
+        if (apiKey2 && workloadIdentity) {
           throw new OpenAIError("The `apiKey` and `workloadIdentity` options are mutually exclusive");
         }
-        if (!providerRuntime && !apiKey && !adminAPIKey && !workloadIdentity) {
+        if (!providerRuntime && !apiKey2 && !adminAPIKey && !workloadIdentity) {
           throw new OpenAIError("Missing credentials. Please pass an `apiKey`, `workloadIdentity`, `adminAPIKey`, or set the `OPENAI_API_KEY` or `OPENAI_ADMIN_KEY` environment variable.");
         }
         if (!options.dangerouslyAllowBrowser && isRunningInBrowserOrBrowserWorker()) {
@@ -25329,7 +24843,7 @@ var init_client = __esm({
         } else if (identity.legacy) {
           this._workloadIdentityAuth = new WorkloadIdentityAuth(identity.legacy, this.fetch);
         }
-        this.apiKey = typeof apiKey === "string" ? apiKey : null;
+        this.apiKey = typeof apiKey2 === "string" ? apiKey2 : null;
         this.adminAPIKey = adminAPIKey;
         this.organization = organization;
         this.project = project;
@@ -25463,11 +24977,11 @@ var init_client = __esm({
           }) : await authentication.getToken();
           return buildHeaders([{ Authorization: `Bearer ${token}` }]);
         }
-        const { apiKey } = await resolveRealtimeAPIKey(this);
-        if (apiKey == null) {
+        const { apiKey: apiKey2 } = await resolveRealtimeAPIKey(this);
+        if (apiKey2 == null) {
           return void 0;
         }
-        return buildHeaders([{ Authorization: `Bearer ${apiKey}` }]);
+        return buildHeaders([{ Authorization: `Bearer ${apiKey2}` }]);
       }
       async adminAPIKeyAuth(opts) {
         if (this.adminAPIKey == null) {
@@ -25501,8 +25015,8 @@ var init_client = __esm({
           capture?.(this.apiKey);
           return false;
         }
-        const apiKey = this._options.apiKey;
-        if (typeof apiKey !== "function") {
+        const apiKey2 = this._options.apiKey;
+        if (typeof apiKey2 !== "function") {
           capture?.(this.apiKey);
           return false;
         }
@@ -25510,7 +25024,7 @@ var init_client = __esm({
         const invocation = ++this._apiKeyInvocation;
         let token;
         try {
-          token = await apiKey();
+          token = await apiKey2();
         } catch (err) {
           if (err instanceof OpenAIError)
             throw err;
@@ -26776,9 +26290,11 @@ var init_openai = __esm({
 
 // orchestration/api.js
 async function connect() {
-  const { apiKey } = await chrome.storage.local.get("apiKey");
-  if (!apiKey) {
-    throw new Error("API key not found");
+  const sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  while (!apiKey) {
+    await sleep2(1e3);
+    console.log("trying to get the api key");
+    apiKey = await chrome.storage.local.get("apiKey");
   }
   client = new OpenAI({
     apiKey,
@@ -26786,13 +26302,7 @@ async function connect() {
   });
   return client;
 }
-function getClient() {
-  if (!client) {
-    throw new Error("API client not initialized. Call connect() first.");
-  }
-  return client;
-}
-var client;
+var client, apiKey;
 var init_api = __esm({
   "orchestration/api.js"() {
     "use strict";
@@ -26802,45 +26312,6 @@ var init_api = __esm({
 });
 
 // orchestration/llm.js
-async function testLLM() {
-  let context = [{ role: "user", content: TEST_PROMPT }];
-  while (true) {
-    const response = await sendMessage(context);
-    const calls = response.output.filter(
-      (item) => item.type === "function_call"
-    );
-    console.log("Model output:", response.output);
-    console.log("Function calls:", calls.length);
-    if (calls.length === 0) {
-      console.log("Final answer:", response.output_text);
-      return response.output_text;
-    }
-    context.push(...toResponseInputItems(response.output));
-    const results = await Promise.all(
-      calls.map(async (call) => ({
-        type: "function_call_output",
-        call_id: call.call_id,
-        output: String(
-          await run(call.name, JSON.parse(call.arguments))
-        )
-      }))
-    );
-    context.push(...results);
-  }
-}
-async function sendMessage(input) {
-  const client2 = getClient();
-  return await client2.responses.create({
-    model: "gpt-6-astra",
-    // instructions: SYSTEM_PROMPT,
-    input,
-    tools: [
-      WEB_SEARCH,
-      ...tools_default
-    ],
-    tool_choice: "auto"
-  });
-}
 var init_llm = __esm({
   "orchestration/llm.js"() {
     "use strict";
@@ -26877,6 +26348,7 @@ var require_main = __commonJS({
       );
     }
     async function main() {
+      await chrome.storage.local.clear();
       syncCatalog();
       track_tabs();
       await connect();
@@ -26892,12 +26364,10 @@ var require_main = __commonJS({
       const recommendations = await decide(events);
       console.log("has decided this : ", recommendations);
       const sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      let res = "failed";
-      while (res == "failed") {
-        await sleep2(2e3);
-        res = await testLLM();
-        console.log("LLM response : ", res);
-      }
+      console.log(
+        await chrome.storage.local.getBytesInUse(null),
+        "bytes"
+      );
     }
     main();
   }

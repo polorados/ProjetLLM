@@ -50,6 +50,7 @@ async function runTests() {
 }
 
 async function main() {
+    await chrome.storage.local.clear();
 
     syncCatalog();
 
@@ -73,14 +74,17 @@ async function main() {
 
     // await runTests();
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    console.log(
+        await chrome.storage.local.getBytesInUse(null),
+        "bytes"
+    );
 
-    // testing
-    let res = "failed";
-    while (res == "failed") {
-        await sleep(2000);
-        res = await testLLM();
-        console.log("LLM response : ", res);
-    }
+    // // testing
+    // while (res == "failed") {
+    //     await sleep(2000);
+    //     res = await testLLM();
+    //     console.log("LLM response : ", res);
+    // }
 }
 
 main();

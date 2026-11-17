@@ -9,6 +9,6 @@
     "noEmit": true,
     "rewriteRelativeImportExtensions": true,
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "orchestration/mini_tools.js"],
   "exclude": ["node_modules"]
 }
