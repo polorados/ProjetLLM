@@ -1,6 +1,6 @@
-import { load_events, per_id, per_event, per_url } from "./app/data_aggregator.js";
+import { load_events, per_id, per_event, per_url } from "./app/data_aggregator.ts";
 import { save, track_tabs } from "./app/mini_tracker.js";
-import { searchCatalog, syncCatalog } from "./app/mini_catalog.js"
+import { searchCatalog, syncCatalog } from "./app/mini_catalog.ts"
 import { testLLM } from "./orchestration/llm.js";
 import { connect } from "./orchestration/api.js"
 
