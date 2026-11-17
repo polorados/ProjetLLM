@@ -1,0 +1,358 @@
+[
+  {
+    "type": "function",
+    "name": "per_id",
+    "description": "Aggregates events by tab ID.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/TabEvent"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "EventName": {
+          "type": "string",
+          "enum": [
+            "activated",
+            "closed",
+            "created",
+            "updated"
+          ]
+        },
+        "TabEvent": {
+          "type": "object",
+          "properties": {
+            "time": {
+              "type": "number"
+            },
+            "name": {
+              "$ref": "#/$defs/EventName"
+            },
+            "id": {
+              "type": "number"
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "info": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "time",
+            "name",
+            "id",
+            "url",
+            "info"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "per_url",
+    "description": "Aggregates events by URL.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/TabEvent"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "EventName": {
+          "type": "string",
+          "enum": [
+            "activated",
+            "closed",
+            "created",
+            "updated"
+          ]
+        },
+        "TabEvent": {
+          "type": "object",
+          "properties": {
+            "time": {
+              "type": "number"
+            },
+            "name": {
+              "$ref": "#/$defs/EventName"
+            },
+            "id": {
+              "type": "number"
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "info": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "time",
+            "name",
+            "id",
+            "url",
+            "info"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "per_event",
+    "description": "Aggregates events by event type.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/TabEvent"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "EventName": {
+          "type": "string",
+          "enum": [
+            "activated",
+            "closed",
+            "created",
+            "updated"
+          ]
+        },
+        "TabEvent": {
+          "type": "object",
+          "properties": {
+            "time": {
+              "type": "number"
+            },
+            "name": {
+              "$ref": "#/$defs/EventName"
+            },
+            "id": {
+              "type": "number"
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "info": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "time",
+            "name",
+            "id",
+            "url",
+            "info"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "searchCatalog",
+    "description": "Searches the feature catalog.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "need": {
+          "$ref": "#/$defs/Need"
+        }
+      },
+      "required": [
+        "need"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "Need": {
+          "type": "string",
+          "enum": [
+            "aller_retour",
+            "copier_coller",
+            "lecture_longue",
+            "ouverture_quotidienne",
+            "raccourcis_clavier",
+            "traduction",
+            "trop_onglets"
+          ]
+        }
+      }
+    },
+    "strict": true
+  }
+]
