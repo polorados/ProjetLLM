@@ -40,40 +40,75 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// app/data_aggregator.js
+// app/data_aggregator.ts
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isEventName(value) {
+  return ["created", "activated", "updated", "closed"].includes(value);
+}
 async function load_events() {
   const all = await chrome.storage.local.get(null);
-  return Object.entries(all).filter(([key]) => /^event-tab-\d+-[a-f0-9]{4}$/i.test(key)).map(([key, record]) => ({
-    time: Number(key.match(/^event-tab-(\d+)/)[1]),
-    name: Object.keys(record)[0],
-    ...record[Object.keys(record)[0]]
-  })).sort((a, b) => a.time - b.time).map(({ time, ...event }) => event);
+  const events = [];
+  for (const [key, record] of Object.entries(all)) {
+    const match = key.match(/^event-tab-(\d+)-[a-f0-9]{4}$/i);
+    if (!match || !isRecord(record)) continue;
+    const name = Object.keys(record)[0];
+    if (!name || !isEventName(name)) continue;
+    const data = record[name];
+    if (!isRecord(data) || typeof data.id !== "number") continue;
+    const rawInfo = isRecord(data.info) ? data.info : {};
+    events.push({
+      time: Number(match[1]),
+      name,
+      id: data.id,
+      url: typeof data.url === "string" ? data.url : null,
+      info: data.info == null ? null : {
+        title: typeof rawInfo.title === "string" ? rawInfo.title : null,
+        status: typeof rawInfo.status === "number" ? rawInfo.status : null
+      }
+    });
+  }
+  return events.sort((a, b) => a.time - b.time);
 }
 async function per_id(events) {
   events ??= await load_events();
   const out = {};
   for (const event of events) {
-    const time = Number(event._time);
-    const [name, data] = Object.entries(event).filter(([key]) => key !== "_time")[0] ?? [];
-    if (!data || data.id == null) continue;
-    (out[data.id] ??= []).push({ time, name });
+    (out[event.id] ??= []).push({
+      time: event.time,
+      name: event.name
+    });
   }
+  console.log("per id result : ", out);
   return out;
 }
 async function per_event(events) {
   events ??= await load_events();
-  const out = {};
-  for (const { time, name } of events) (out[name] ??= []).push(time);
+  const out = {
+    created: [],
+    activated: [],
+    updated: [],
+    closed: []
+  };
+  for (const { time, name } of events) {
+    out[name].push(time);
+  }
+  console.log("per event result : ", out);
   return out;
 }
 async function per_url(events) {
   events ??= await load_events();
   const urls = /* @__PURE__ */ new Set();
-  for (const { url } of events) if (url) urls.add(url);
+  for (const { url } of events) {
+    if (url) urls.add(url);
+  }
+  console.log("per url result : ", urls);
   return [...urls];
 }
 var init_data_aggregator = __esm({
-  "app/data_aggregator.js"() {
+  "app/data_aggregator.ts"() {
+    "use strict";
   }
 });
 
@@ -94,10 +129,11 @@ function track_tabs() {
 }
 var init_mini_tracker = __esm({
   "app/mini_tracker.js"() {
+    "use strict";
   }
 });
 
-// app/mini_catalog.js
+// app/mini_catalog.ts
 async function syncCatalog() {
   const res = await fetch(CATALOG_URL);
   const data = await res.json();
@@ -114,16 +150,376 @@ async function searchCatalog(need) {
 }
 var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY;
 var init_mini_catalog = __esm({
-  "app/mini_catalog.js"() {
+  "app/mini_catalog.ts"() {
+    "use strict";
     CATALOG_URL = "https://polorados.github.io/catalogue-extension/catalog.json";
     BUNDLED_PATH = "catalog.bundled.json";
     STORAGE_KEY = "catalog";
   }
 });
 
-// orchestration/mini_prompt.js
-var init_mini_prompt = __esm({
-  "orchestration/mini_prompt.js"() {
+// orchestration/tools.json
+var tools_default;
+var init_tools = __esm({
+  "orchestration/tools.json"() {
+    tools_default = [
+      {
+        type: "function",
+        name: "per_id",
+        description: "Aggregates events by tab ID.",
+        parameters: {
+          type: "object",
+          properties: {
+            events: {
+              anyOf: [
+                {
+                  type: "null"
+                },
+                {
+                  type: "array",
+                  items: {
+                    $ref: "#/$defs/TabEvent"
+                  }
+                }
+              ]
+            }
+          },
+          required: [
+            "events"
+          ],
+          additionalProperties: false,
+          $defs: {
+            EventName: {
+              type: "string",
+              enum: [
+                "activated",
+                "closed",
+                "created",
+                "updated"
+              ]
+            },
+            TabEvent: {
+              type: "object",
+              properties: {
+                time: {
+                  type: "number"
+                },
+                name: {
+                  $ref: "#/$defs/EventName"
+                },
+                id: {
+                  type: "number"
+                },
+                url: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "string"
+                    }
+                  ]
+                },
+                info: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        title: {
+                          anyOf: [
+                            {
+                              type: "null"
+                            },
+                            {
+                              type: "string"
+                            }
+                          ]
+                        },
+                        status: {
+                          anyOf: [
+                            {
+                              type: "null"
+                            },
+                            {
+                              type: "number"
+                            }
+                          ]
+                        }
+                      },
+                      required: [
+                        "title",
+                        "status"
+                      ],
+                      additionalProperties: false
+                    }
+                  ]
+                }
+              },
+              required: [
+                "time",
+                "name",
+                "id",
+                "url",
+                "info"
+              ],
+              additionalProperties: false
+            }
+          }
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "per_url",
+        description: "Aggregates events by URL.",
+        parameters: {
+          type: "object",
+          properties: {
+            events: {
+              anyOf: [
+                {
+                  type: "null"
+                },
+                {
+                  type: "array",
+                  items: {
+                    $ref: "#/$defs/TabEvent"
+                  }
+                }
+              ]
+            }
+          },
+          required: [
+            "events"
+          ],
+          additionalProperties: false,
+          $defs: {
+            EventName: {
+              type: "string",
+              enum: [
+                "activated",
+                "closed",
+                "created",
+                "updated"
+              ]
+            },
+            TabEvent: {
+              type: "object",
+              properties: {
+                time: {
+                  type: "number"
+                },
+                name: {
+                  $ref: "#/$defs/EventName"
+                },
+                id: {
+                  type: "number"
+                },
+                url: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "string"
+                    }
+                  ]
+                },
+                info: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        title: {
+                          anyOf: [
+                            {
+                              type: "null"
+                            },
+                            {
+                              type: "string"
+                            }
+                          ]
+                        },
+                        status: {
+                          anyOf: [
+                            {
+                              type: "null"
+                            },
+                            {
+                              type: "number"
+                            }
+                          ]
+                        }
+                      },
+                      required: [
+                        "title",
+                        "status"
+                      ],
+                      additionalProperties: false
+                    }
+                  ]
+                }
+              },
+              required: [
+                "time",
+                "name",
+                "id",
+                "url",
+                "info"
+              ],
+              additionalProperties: false
+            }
+          }
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "per_event",
+        description: "Aggregates events by event type.",
+        parameters: {
+          type: "object",
+          properties: {
+            events: {
+              anyOf: [
+                {
+                  type: "null"
+                },
+                {
+                  type: "array",
+                  items: {
+                    $ref: "#/$defs/TabEvent"
+                  }
+                }
+              ]
+            }
+          },
+          required: [
+            "events"
+          ],
+          additionalProperties: false,
+          $defs: {
+            EventName: {
+              type: "string",
+              enum: [
+                "activated",
+                "closed",
+                "created",
+                "updated"
+              ]
+            },
+            TabEvent: {
+              type: "object",
+              properties: {
+                time: {
+                  type: "number"
+                },
+                name: {
+                  $ref: "#/$defs/EventName"
+                },
+                id: {
+                  type: "number"
+                },
+                url: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "string"
+                    }
+                  ]
+                },
+                info: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "object",
+                      properties: {
+                        title: {
+                          anyOf: [
+                            {
+                              type: "null"
+                            },
+                            {
+                              type: "string"
+                            }
+                          ]
+                        },
+                        status: {
+                          anyOf: [
+                            {
+                              type: "null"
+                            },
+                            {
+                              type: "number"
+                            }
+                          ]
+                        }
+                      },
+                      required: [
+                        "title",
+                        "status"
+                      ],
+                      additionalProperties: false
+                    }
+                  ]
+                }
+              },
+              required: [
+                "time",
+                "name",
+                "id",
+                "url",
+                "info"
+              ],
+              additionalProperties: false
+            }
+          }
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "searchCatalog",
+        description: "Searches the feature catalog.",
+        parameters: {
+          type: "object",
+          properties: {
+            need: {
+              $ref: "#/$defs/Need"
+            }
+          },
+          required: [
+            "need"
+          ],
+          additionalProperties: false,
+          $defs: {
+            Need: {
+              type: "string",
+              enum: [
+                "aller_retour",
+                "copier_coller",
+                "lecture_longue",
+                "ouverture_quotidienne",
+                "raccourcis_clavier",
+                "traduction",
+                "trop_onglets"
+              ]
+            }
+          }
+        },
+        strict: true
+      }
+    ];
   }
 });
 
@@ -132,6 +528,21 @@ async function run(name, input) {
   const impls = {
     async helloWorld({ somethingToSay }) {
       return `Hello, ${somethingToSay}!`;
+    },
+    async per_id({ events } = {}) {
+      return await per_id(events);
+    },
+    async per_event({ events } = {}) {
+      return await per_event(events);
+    },
+    async per_url({ events } = {}) {
+      return await per_url(events);
+    },
+    async searchCatalog({ needs }) {
+      return await searchCatalog(needs);
+    },
+    async get_installed_extensions() {
+      return await getInstalled();
     }
   };
   const impl = impls[name];
@@ -140,28 +551,13 @@ async function run(name, input) {
   }
   return await impl(input);
 }
-var TOOL_DEFS, WEB_SEARCH, TEST_PROMPT;
+var WEB_SEARCH, TEST_PROMPT;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
-    TOOL_DEFS = [
-      {
-        type: "function",
-        name: "helloWorld",
-        description: "sends a message",
-        parameters: {
-          type: "object",
-          properties: {
-            somethingToSay: {
-              type: "string",
-              description: "The message to send"
-            }
-          },
-          required: ["somethingToSay"],
-          additionalProperties: false
-        },
-        strict: true
-      }
-    ];
+    "use strict";
+    init_data_aggregator();
+    init_mini_catalog();
+    init_tools();
     WEB_SEARCH = {
       type: "web_search",
       filters: {
@@ -26395,6 +26791,7 @@ function getClient() {
 var client;
 var init_api = __esm({
   "orchestration/api.js"() {
+    "use strict";
     init_openai();
     client = null;
   }
@@ -26435,14 +26832,14 @@ async function sendMessage(input) {
     input,
     tools: [
       WEB_SEARCH,
-      ...TOOL_DEFS
+      ...tools_default
     ],
     tool_choice: "auto"
   });
 }
 var init_llm = __esm({
   "orchestration/llm.js"() {
-    init_mini_prompt();
+    "use strict";
     init_mini_tools();
     init_ResponseInputItems();
     init_api();
