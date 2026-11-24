@@ -35,10 +35,25 @@ export type Need =
   | "lecture_longue"
   | "raccourcis_clavier";
 
+export interface InstalledExtension {
+    id: string;
+    name: string;
+    enabled: boolean;
+}
+
+export interface InstalledExtensionList {
+  installedExtensions: InstalledExtension[];
+}
+
 export interface CatalogEntry {
   need: Need[];
 }
 
 export interface CatalogData {
   entries: CatalogEntry[];
+}
+
+export interface Conclusion {
+  conclusion:string | null,
+  notes:string | null
 }

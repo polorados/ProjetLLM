@@ -1,25 +1,61 @@
 import { per_id, per_url, per_event } from "../app/data_aggregator";
-import { searchCatalog } from "../app/mini_catalog";
-import { type TabEvent, Need } from "../app/types";
+import { searchCatalog, getInstalled } from "../app/mini_catalog";
+import type {
+    TabEvent,
+    Need,
+    PerIdResult,
+    PerUrlResult,
+    PerEventResult,
+    CatalogEntry,
+    InstalledExtension,
+    Conclusion,
+    CatalogData,
+    InstalledExtensionList
+} from "../app/types";
+import { saveConclusion, getPreviousConclusion } from "./../app/history.ts"
 
 export class Function_Tools {
     /** Aggregates events by tab ID. */
-    per_id = async (params: { events: TabEvent[] | null }) => ({
+    per_id = async (
+        params: { events: TabEvent[] | null }
+    ): Promise<{ result: PerIdResult }> => ({
         result: await per_id(params.events ?? undefined)
     });
 
     /** Aggregates events by URL. */
-    per_url(params: { events: TabEvent[] | null }) {
-        return { result: per_url(params.events ?? undefined) };
+    per_url(
+        params: { events: TabEvent[] | null }
+    ): Promise<{ result: PerUrlResult }> {
+        return per_url(params.events ?? undefined)
+            .then(result => ({ result }));
     }
 
     /** Aggregates events by event type. */
-    per_event(params: { events: TabEvent[] | null }) {
+    per_event(
+        params: { events: TabEvent[] | null }
+    ): Promise<PerEventResult> {
         return per_event(params.events ?? undefined);
     }
 
     /** Searches the feature catalog. */
-    searchCatalog(params: { need: Need }) {
-        return { result: searchCatalog(params.need) };
+    searchCatalog(
+        params: { need: Need }
+    ): Promise<CatalogData> {
+        return searchCatalog(params.need)
+    }
+
+    /** get the list of installed extension on the chrome browser */
+    getInstalled(): Promise<InstalledExtensionList> {
+        return getInstalled()
+    }
+
+    /** save the conclusion made from events 
+     * (to keep some history) */
+    saveConclusion(params: {conclusion:string, newNote: string}) {
+        saveConclusion(params.conclusion, params.newNote)
+    }
+
+    getPreviousConclusion(): Conclusion {
+        return getPreviousConclusion()
     }
 }

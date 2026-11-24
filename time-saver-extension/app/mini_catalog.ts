@@ -1,4 +1,4 @@
-import type { Need, CatalogEntry } from "./types";
+import type { Need, CatalogEntry, InstalledExtension, CatalogData, InstalledExtensionList } from "./types";
 
 // catalog.js: sync a remote catalog and look up recommendations for ONE need.
 export const CATALOG_URL = 'https://polorados.github.io/catalogue-extension/catalog.json';
@@ -29,7 +29,7 @@ async function getCatalog() {
 // Recommendations for ONE need, e.g. searchCatalog('trop_onglets')
 export async function searchCatalog(
   need: Need
-): Promise<CatalogEntry[]> {
+): Promise<CatalogData> {
   const catalog = await getCatalog();
   const out = catalog.entries.filter((e: { needs: string | string[]; }) => e.needs.includes(need));
   console.log("Result of searchCatalog : ", out);
@@ -37,10 +37,11 @@ export async function searchCatalog(
 }
 
 // TODO: implem ceci plus tard
-export async function getInstalled() {
+export async function getInstalled(): Promise<InstalledExtensionList> {
   const all = await chrome.management.getAll();
-  return all
+  return {installedExtensions: all
     .filter((e) => e.type === 'extension' && e.id !== chrome.runtime.id)
     .slice(0, 100)
-    .map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }));
+    .map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }))
+  }
 }

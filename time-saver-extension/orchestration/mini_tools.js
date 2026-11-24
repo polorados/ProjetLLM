@@ -72,6 +72,22 @@ export function createToolRunner(){
   return { run, state };
 }
 
+const impls = {
+    per_id: ({ events } = {})       => functionTools.per_id({ events }),
+    per_event: ({ events } = {})    => functionTools.per_event({ events }),
+    per_url: ({ events } = {})      => functionTools.per_url({ events }),
+    searchCatalog: ({ need })       => functionTools.searchCatalog({ need }),
+    get_installed_extensions : ()   => functionTools.getInstalled()
+};
+
+export async function run(name, input) {
+    const impl = impls[name];
+
+    if (!impl) throw new Error(`Unknown tool: ${name}`);
+
+    return await impl(input ?? {});
+}
+
 
 export const WEB_SEARCH = {
     type: "web_search",
