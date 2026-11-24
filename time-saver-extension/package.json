@@ -4,16 +4,27 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "build": "esbuild main.js --bundle --outfile=dist/main.js --format=esm"
+    "build": "npm run typecheck && ttsx build.ts",
+    "build:tools": "ttsx orchestration/build_function_tools.ts",
+    "typecheck": "ttsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "openai": "^7.55.0"
+    "comment-parser": "^1.4.9",
+    "fs": "^0.0.1-security",
+    "openai": "^7.55.0",
+    "typia": "^15.4.1"
   },
   "devDependencies": {
-    "esbuild": "^0.28.2"
+    "@ttsc/unplugin": "^0.37.1",
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "ttsc": "^0.37.1",
+    "typescript": "^7.0.2"
   }
 }

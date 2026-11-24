@@ -1,3 +1,5 @@
+import type { Need, CatalogEntry } from "./types";
+
 // catalog.js: sync a remote catalog and look up recommendations for ONE need.
 export const CATALOG_URL = 'https://polorados.github.io/catalogue-extension/catalog.json';
 const BUNDLED_PATH = 'catalog.bundled.json'; // copy shipped inside the extension
@@ -25,7 +27,11 @@ async function getCatalog() {
 }
 
 // Recommendations for ONE need, e.g. searchCatalog('trop_onglets')
-export async function searchCatalog(need) {
+export async function searchCatalog(
+  need: Need
+): Promise<CatalogEntry[]> {
   const catalog = await getCatalog();
-  return catalog.entries.filter((e) => e.needs.includes(need));
+  const out = catalog.entries.filter((e: { needs: string | string[]; }) => e.needs.includes(need));
+  console.log("Result of searchCatalog : ", out);
+  return out
 }
