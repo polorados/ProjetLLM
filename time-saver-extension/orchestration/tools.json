@@ -407,5 +407,121 @@
       "$defs": {}
     },
     "strict": true
+  },
+  {
+    "type": "function",
+    "name": "getCatalog",
+    "description": "get the full catalog list",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false,
+      "$defs": {}
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "reshape_recommendations",
+    "description": "reshape the recommendations to submit to the UI",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "recommendations": {
+          "$ref": "#/$defs/CatalogData"
+        }
+      },
+      "required": [
+        "recommendations"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "CatalogData": {
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/CatalogEntry"
+              }
+            }
+          },
+          "required": [
+            "entries"
+          ],
+          "additionalProperties": false
+        },
+        "CatalogEntry": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "$ref": "#/$defs/CatalogEntryType"
+            },
+            "name": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "needs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Need"
+              }
+            },
+            "url": {
+              "type": "string"
+            },
+            "shortcut": {
+              "type": "string"
+            },
+            "last_verified": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "name",
+            "summary",
+            "needs",
+            "url",
+            "last_verified"
+          ],
+          "additionalProperties": false
+        },
+        "CatalogEntryType": {
+          "type": "string",
+          "enum": [
+            "chrome_feature",
+            "extension"
+          ]
+        },
+        "Need": {
+          "type": "string",
+          "enum": [
+            "aller_retour",
+            "copier_coller",
+            "lecture_longue",
+            "ouverture_quotidienne",
+            "raccourcis_clavier",
+            "traduction",
+            "trop_onglets"
+          ]
+        }
+      }
+    },
+    "strict": true
   }
 ]

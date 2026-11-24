@@ -1,6 +1,6 @@
 import { load_events, per_id, per_event, per_url } from "./app/data_aggregator.ts";
 import { save, track_tabs } from "./app/mini_tracker.js";
-import { searchCatalog, syncCatalog } from "./app/mini_catalog.ts"
+import { searchCatalog, syncCatalog, reshape_recommendations } from "./app/mini_catalog.ts"
 import { testLLM } from "./orchestration/llm.js";
 import { connect } from "./orchestration/api.js"
 
@@ -16,15 +16,6 @@ async function decide(events) {
     recommendations = await reshape_recommendations(recommendations);
     await chrome.storage.local.set({ recommendations: recommendations });
     return recommendations;
-}
-
-async function reshape_recommendations(recommendations) {
-    return Object.fromEntries(
-        recommendations.map(({ id, name, needs, summary, url, shortcut }) => [
-            id,
-            { name, needs, summary, url, shortcut }
-        ])
-    );
 }
 
 // async function runTests() {

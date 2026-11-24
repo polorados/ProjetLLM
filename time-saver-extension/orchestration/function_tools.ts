@@ -1,5 +1,5 @@
 import { per_id, per_url, per_event } from "../app/data_aggregator";
-import { searchCatalog, getInstalled } from "../app/mini_catalog";
+import { searchCatalog, getInstalled, getCatalog, reshape_recommendations } from "../app/mini_catalog";
 import type {
     TabEvent,
     Need,
@@ -8,7 +8,8 @@ import type {
     PerEventResult,
     Conclusion,
     CatalogData,
-    InstalledExtensionList
+    InstalledExtensionList,
+    ReshapedRecommendations,
 } from "../app/types";
 import { saveConclusion, getPreviousConclusion } from "./../app/history.ts"
 
@@ -58,5 +59,15 @@ export class Function_Tools {
     /** get the previous conclusion drawn during the previous reflexion */
     getPreviousConclusion(): Conclusion {
         return getPreviousConclusion()
+    }
+
+    /** get the full catalog list */
+    getCatalog(): Promise<CatalogData> {
+        return getCatalog()
+    }
+
+    /** reshape the recommendations to submit to the UI  */
+    reshape_recommendations( params: {recommendations: CatalogData} ): ReshapedRecommendations {
+        return reshape_recommendations(params.recommendations);
     }
 }

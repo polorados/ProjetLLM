@@ -1,4 +1,4 @@
-import type { Need, CatalogEntry, InstalledExtension, CatalogData, InstalledExtensionList } from "./types";
+import type { Need, CatalogEntry, InstalledExtension, CatalogData, InstalledExtensionList, ReshapedRecommendations } from "./types";
 
 // catalog.js: sync a remote catalog and look up recommendations for ONE need.
 export const CATALOG_URL = 'https://polorados.github.io/catalogue-extension/catalog.json';
@@ -20,10 +20,13 @@ export function setupCatalogAlarm() {
 }
 
 // Synced catalog if there is one, otherwise the bundled copy
-async function getCatalog() {
+export async function getCatalog(): Promise<CatalogData>{
   const stored = (await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY];
-  if (stored) return stored;
-  return fetch(chrome.runtime.getURL(BUNDLED_PATH)).then((r) => r.json());
+
+  if (stored) return stored as CatalogData;
+
+  const response = await fetch(chrome.runtime.getURL(BUNDLED_PATH));
+  return await response.json() as CatalogData;
 }
 
 // Recommendations for ONE need, e.g. searchCatalog('trop_onglets')
@@ -31,8 +34,11 @@ export async function searchCatalog(
   need: Need
 ): Promise<CatalogData> {
   const catalog = await getCatalog();
-  const out = catalog.entries.filter((e: { needs: string | string[]; }) => e.needs.includes(need));
-  return out
+    return {
+        entries: catalog.entries.filter(
+            entry => entry.needs.includes(need)
+        )
+    };
 }
 
 // TODO: implem ceci plus tard
@@ -44,4 +50,14 @@ export async function getInstalled(): Promise<InstalledExtensionList> {
     .map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }))
   }
   return out;
+}
+
+export function reshape_recommendations(
+    recommendations: CatalogData
+): ReshapedRecommendations {
+    return {recommendations: recommendations.entries.map(
+        ({ id, name, needs, summary, url, shortcut }) => ({
+            id, name, needs, summary, url, shortcut
+        })
+    )};
 }
