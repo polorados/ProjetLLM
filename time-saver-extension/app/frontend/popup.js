@@ -14,14 +14,27 @@ document.getElementById("save").addEventListener("click", async () => {
   setTimeout(() => (status.textContent = ""), 1500);
 });
 
-document.addEventListener("DOMContentLoaded", async () => {
-    const { recommendations = {} } =
+// submitRecommendation stores { recommendations: { recommendations: [...] } },
+// so the list is one level down. A plain array is accepted too.
+function toList(stored) {
+    if (Array.isArray(stored)) return stored;
+    return stored?.recommendations ?? [];
+}
+
+async function render() {
+    const { recommendations } =
         await chrome.storage.local.get("recommendations");
 
     const container = document.getElementById("recommendations");
     container.innerHTML = "";
 
-    Object.entries(recommendations).forEach(([id, feature]) => {
+    const list = toList(recommendations);
+    if (list.length === 0) {
+        container.textContent = "Aucune recommandation pour l'instant.";
+        return;
+    }
+
+    list.forEach(feature => {
         const card = document.createElement("div");
         card.className = "recommendation";
 
@@ -29,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         name.textContent = feature.name;
 
         const section = document.createElement("small");
-        section.textContent = id;
+        section.textContent = feature.id;
 
         const needs = document.createElement("div");
         needs.className = "needs";
@@ -52,4 +65,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         card.append(name, section, needs, description, link);
         container.appendChild(card);
     });
+}
+
+// Render when the popup opens, then again whenever new recommendations are saved
+document.addEventListener("DOMContentLoaded", render);
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.recommendations) render();
 });

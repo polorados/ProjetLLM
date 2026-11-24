@@ -806,7 +806,7 @@ async function run(name, input) {
   if (!impl) throw new Error(`Unknown tool: ${name}`);
   return await impl(input ?? {});
 }
-var functionTools, impls, WEB_SEARCH, TEST_PROMPT, SYSTEM_PROMPT, OPTIMIZE_PROMPT;
+var functionTools, impls, WEB_SEARCH, SYSTEM_PROMPT, OPTIMIZE_PROMPT;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
@@ -819,9 +819,9 @@ var init_mini_tools = __esm({
       per_url: ({ events } = {}) => functionTools.per_url({ events }),
       searchCatalog: ({ need } = {}) => functionTools.searchCatalog({ need }),
       getInstalled: () => functionTools.getInstalled(),
-      saveConclusion: ({ conclusion, newNote } = {}) => functionTools.saveConclusion({ conclusion, newNote }),
+      saveConclusion: ({ events, recommendations, others } = {}) => functionTools.saveConclusion({ events, recommendations, others }),
       getPreviousConclusion: () => functionTools.getPreviousConclusion(),
-      submitRecommendation: ({ recommendations }) => functionTools.submitRecommendation({ recommendations }),
+      submitRecommendation: ({ recommendations } = {}) => functionTools.submitRecommendation({ recommendations }),
       getCatalog: () => functionTools.getCatalog()
     };
     WEB_SEARCH = {
@@ -834,7 +834,6 @@ var init_mini_tools = __esm({
         ]
       }
     };
-    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
     SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue.
 
 D\xC9MARCHE
@@ -27078,9 +27077,6 @@ var init_api = __esm({
 });
 
 // orchestration/llm.js
-async function testLLM() {
-  return await runLLMCycle(TEST_PROMPT);
-}
 async function applyTools(calls) {
   let results = [];
   for (const call of calls) {
@@ -27168,9 +27164,6 @@ var require_main = __commonJS({
       console.log("--- \xC9TAT FINAL DU RUNNER ---");
       console.log(state2);
     }
-    function sleep2(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
     var INTERVAL_TIME_MINUTES = 3;
     var TEST_FUNCTIONS = false;
     async function main() {
@@ -27179,12 +27172,6 @@ var require_main = __commonJS({
       await connect();
       if (TEST_FUNCTIONS) {
         await runTests();
-      }
-      let res = "failed";
-      while (res == "failed") {
-        await sleep2(2e3);
-        res = await testLLM();
-        console.log("LLM response : ", res);
       }
       await runPeriodicAnalysis();
       setInterval(runPeriodicAnalysis, INTERVAL_TIME_MINUTES * 1e3 * 60);

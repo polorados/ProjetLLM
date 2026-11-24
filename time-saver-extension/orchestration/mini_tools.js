@@ -11,9 +11,9 @@ const impls = {
     per_url: ({ events } = {})      => functionTools.per_url({ events }),
     searchCatalog: ({ need } = {})  => functionTools.searchCatalog({ need }),
     getInstalled : ()               => functionTools.getInstalled(),
-    saveConclusion: ({ conclusion, newNote } = {}) => functionTools.saveConclusion({ conclusion, newNote }),
+    saveConclusion: ({ events, recommendations, others } = {}) => functionTools.saveConclusion({ events, recommendations, others }),
     getPreviousConclusion: ()       => functionTools.getPreviousConclusion(),
-    submitRecommendation: ({ recommendations})     => functionTools.submitRecommendation({ recommendations }),
+    submitRecommendation: ({ recommendations} = {})     => functionTools.submitRecommendation({ recommendations }),
     getCatalog: ()                  => functionTools.getCatalog()
 };
 
