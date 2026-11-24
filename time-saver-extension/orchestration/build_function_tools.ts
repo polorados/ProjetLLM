@@ -15,7 +15,7 @@ export function build() {
 
 
     writeFileSync(
-        "tools.json",
+        "orchestration/tools.json",
         JSON.stringify(tools, null, 2),
         "utf-8"
     );
@@ -26,3 +26,5 @@ export function build() {
 export function main() {
     build();
 }
+
+main();

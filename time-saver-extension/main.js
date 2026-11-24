@@ -50,7 +50,7 @@ async function reshape_recommendations(recommendations) {
 // }
 
 async function main() {
-    await chrome.storage.local.clear();
+    // await chrome.storage.local.clear();
 
     syncCatalog();
 
@@ -62,54 +62,52 @@ async function main() {
 
     const INTERVAL_TIME = 3 * 60 * 1000;
 
-    async function runPeriodicAnalysis() {
-        try {
-            console.log("\n--- [Déclenchement périodique] Analyse par le LLM ---");
-            const startTime = Date.now();
+    // async function runPeriodicAnalysis() {
+    //     try {
+    //         console.log("\n--- [Déclenchement périodique] Analyse par le LLM ---");
+    //         const startTime = Date.now();
 
-            const res = await testLLM();
-            console.log("LLM response : ", res);
-            console.log(`Analyse terminée en ${(Date.now() - startTime) / 1000}s`);
-        } catch (error) {
-            console.error("Erreur lors de l'exécution périodique du LLM :", error);
-        }
-    }
-    // const events = await load_events();
+    //         const res = await testLLM();
+    //         console.log("LLM response : ", res);
+    //         console.log(`Analyse terminée en ${(Date.now() - startTime) / 1000}s`);
+    //     } catch (error) {
+    //         console.error("Erreur lors de l'exécution périodique du LLM :", error);
+    //     }
+    // }
+    const events = await load_events();
 
-    // console.log("events are sorted");
-    // const [ids, evts, urls] = await Promise.all([
-    //     per_id(events),
-    //     per_event(events),
-    //     per_url(events),
-    // ]);
+    console.log("events are sorted");
+    const [ids, evts, urls] = await Promise.all([
+        per_id(events),
+        per_event(events),
+        per_url(events),
+    ]);
 
-    // console.log({ ids, evts, urls });
+    console.log({ ids, evts, urls });
     // const recommendations = await decide(events)
     // console.log("has decided this : ", recommendations)
 
     // // await runTests();
     // const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // // testing
-    // let res = "failed";
     // await runTests();
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    console.log(
-        await chrome.storage.local.getBytesInUse(null),
-        "bytes"
-    );
+    // console.log(
+    //     await chrome.storage.local.getBytesInUse(null),
+    //     "bytes"
+    // );
 
-    // // testing
-    // let res = "failed";
-    // while (res == "failed") {
-    //     await sleep(2000);
-    //     res = await testLLM();
-    //     console.log("LLM response : ", res);
-    // }
+    // testing
+    let res = "failed";
+    while (res == "failed") {
+        await sleep(2000);
+        res = await testLLM();
+        console.log("LLM response : ", res);
+    }
 
-    await runPeriodicAnalysis();
+    // await runPeriodicAnalysis();
 
-    setInterval(runPeriodicAnalysis, INTERVAL_TIME);
+    // setInterval(runPeriodicAnalysis, INTERVAL_TIME);
 }
 
 main();

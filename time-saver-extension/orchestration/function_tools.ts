@@ -6,8 +6,6 @@ import type {
     PerIdResult,
     PerUrlResult,
     PerEventResult,
-    CatalogEntry,
-    InstalledExtension,
     Conclusion,
     CatalogData,
     InstalledExtensionList
@@ -51,10 +49,13 @@ export class Function_Tools {
 
     /** save the conclusion made from events 
      * (to keep some history) */
-    saveConclusion(params: {conclusion:string, newNote: string}) {
-        saveConclusion(params.conclusion, params.newNote)
+    saveConclusion(
+        params: {conclusion:string, newNote: string}
+    ) {
+        return saveConclusion(params.conclusion, params.newNote)
     }
 
+    /** get the previous conclusion drawn during the previous reflexion */
     getPreviousConclusion(): Conclusion {
         return getPreviousConclusion()
     }

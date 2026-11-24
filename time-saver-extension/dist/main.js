@@ -147,7 +147,6 @@ async function getCatalog() {
 async function searchCatalog(need) {
   const catalog = await getCatalog();
   const out = catalog.entries.filter((e) => e.needs.includes(need));
-  console.log("Result of searchCatalog : ", out);
   return out;
 }
 async function getInstalled2() {
@@ -587,6 +586,55 @@ var init_tools = __esm({
           }
         },
         strict: true
+      },
+      {
+        type: "function",
+        name: "getInstalled",
+        description: "get the list of installed extension on the chrome browser",
+        parameters: {
+          type: "object",
+          properties: {},
+          required: [],
+          additionalProperties: false,
+          $defs: {}
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "saveConclusion",
+        description: "save the conclusion made from events\n(to keep some history)",
+        parameters: {
+          type: "object",
+          properties: {
+            conclusion: {
+              type: "string"
+            },
+            newNote: {
+              type: "string"
+            }
+          },
+          required: [
+            "conclusion",
+            "newNote"
+          ],
+          additionalProperties: false,
+          $defs: {}
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "getPreviousConclusion",
+        description: "get the previous conclusion drawn during the previous reflexion",
+        parameters: {
+          type: "object",
+          properties: {},
+          required: [],
+          additionalProperties: false,
+          $defs: {}
+        },
+        strict: true
       }
     ];
   }
@@ -749,21 +797,21 @@ var init_ResponseInputItems = __esm({
 });
 
 // node_modules/openai/internal/tslib.mjs
-function __classPrivateFieldSet(receiver, state2, value, kind, f) {
+function __classPrivateFieldSet(receiver, state3, value, kind, f) {
   if (kind === "m")
     throw new TypeError("Private method is not writable");
   if (kind === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state2 === "function" ? receiver !== state2 || !f : !state2.has(receiver))
+  if (typeof state3 === "function" ? receiver !== state3 || !f : !state3.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state2.set(receiver, value), value;
+  return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state3.set(receiver, value), value;
 }
-function __classPrivateFieldGet(receiver, state2, kind, f) {
+function __classPrivateFieldGet(receiver, state3, kind, f) {
   if (kind === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state2 === "function" ? receiver !== state2 || !f : !state2.has(receiver))
+  if (typeof state3 === "function" ? receiver !== state3 || !f : !state3.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state2.get(receiver);
+  return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state3.get(receiver);
 }
 var init_tslib = __esm({
   "node_modules/openai/internal/tslib.mjs"() {
@@ -3516,12 +3564,12 @@ var require_x509_transport_state = __commonJS({
 });
 
 // node_modules/openai/internal/auth/x509-transport-state.mjs
-var nodeState, state, findRegisteredX509Transport3, rememberRegisteredX509Transport2, markTransientX509ConnectionError2, isTransientX509ConnectionError2, markRetryableX509IssuerError2, isRetryableX509IssuerError2, markApprovedX509Client2, isApprovedX509Client2, rememberX509OAuthError2, findX509OAuthError2, rememberX509Credential2, findX509Credential2;
+var nodeState, state2, findRegisteredX509Transport3, rememberRegisteredX509Transport2, markTransientX509ConnectionError2, isTransientX509ConnectionError2, markRetryableX509IssuerError2, isRetryableX509IssuerError2, markApprovedX509Client2, isApprovedX509Client2, rememberX509OAuthError2, findX509OAuthError2, rememberX509Credential2, findX509Credential2;
 var init_x509_transport_state = __esm({
   "node_modules/openai/internal/auth/x509-transport-state.mjs"() {
     init_x509_transport_state_browser();
     nodeState = __toESM(require_x509_transport_state(), 1);
-    state = typeof nodeState.findRegisteredX509Transport === "function" ? nodeState : x509_transport_state_browser_exports;
+    state2 = typeof nodeState.findRegisteredX509Transport === "function" ? nodeState : x509_transport_state_browser_exports;
     ({
       findRegisteredX509Transport: findRegisteredX509Transport3,
       rememberRegisteredX509Transport: rememberRegisteredX509Transport2,
@@ -3535,7 +3583,7 @@ var init_x509_transport_state = __esm({
       findX509OAuthError: findX509OAuthError2,
       rememberX509Credential: rememberX509Credential2,
       findX509Credential: findX509Credential2
-    } = state);
+    } = state2);
   }
 });
 
@@ -7391,18 +7439,18 @@ function createPartialJSONParseState() {
     pending_high_surrogate: false
   };
 }
-function recordPartialJSONFragment(state2, budget, fragment, validationWorkBudget) {
+function recordPartialJSONFragment(state3, budget, fragment, validationWorkBudget) {
   if (budget.fragments >= MAX_PARTIAL_JSON_FRAGMENTS) {
     throw new OpenAIError("Chat completion stream exceeded its structured JSON fragment limit");
   }
   let bytes = 0;
-  let { depth, escaped, has_non_whitespace: hasNonWhitespace, in_string: inString } = state2;
+  let { depth, escaped, has_non_whitespace: hasNonWhitespace, in_string: inString } = state3;
   let completed = false;
   let firstCharacter = true;
   for (const character of fragment) {
     const previousBytes = bytes;
     const codePoint = character.codePointAt(0);
-    if (firstCharacter && state2.pending_high_surrogate && codePoint >= 56320 && codePoint <= 57343) {
+    if (firstCharacter && state3.pending_high_surrogate && codePoint >= 56320 && codePoint <= 57343) {
       bytes += 1;
     } else if (codePoint <= 127) {
       bytes += 1;
@@ -7447,15 +7495,15 @@ function recordPartialJSONFragment(state2, budget, fragment, validationWorkBudge
       completed || (completed = depth === 0);
     }
   }
-  state2.bytes += bytes;
-  state2.fragments += 1;
-  state2.depth = depth;
-  state2.escaped = escaped;
-  state2.has_non_whitespace = hasNonWhitespace;
-  state2.in_string = inString;
+  state3.bytes += bytes;
+  state3.fragments += 1;
+  state3.depth = depth;
+  state3.escaped = escaped;
+  state3.has_non_whitespace = hasNonWhitespace;
+  state3.in_string = inString;
   if (fragment.length > 0) {
     const finalCodeUnit = fragment.codePointAt(fragment.length - 1) ?? 0;
-    state2.pending_high_surrogate = finalCodeUnit >= 55296 && finalCodeUnit <= 56319;
+    state3.pending_high_surrogate = finalCodeUnit >= 55296 && finalCodeUnit <= 56319;
   }
   budget.bytes += bytes;
   budget.fragments += 1;
@@ -7465,19 +7513,19 @@ function recordPartialJSONFragment(state2, budget, fragment, validationWorkBudge
   if (!hasNonWhitespace || bytes === 0) {
     return false;
   }
-  const minimumGrowth = Math.max(EAGER_PARTIAL_JSON_BYTES, Math.floor(state2.last_parsed_bytes / 2));
-  if (state2.bytes > EAGER_PARTIAL_JSON_BYTES && !completed && state2.bytes - state2.last_parsed_bytes < minimumGrowth) {
+  const minimumGrowth = Math.max(EAGER_PARTIAL_JSON_BYTES, Math.floor(state3.last_parsed_bytes / 2));
+  if (state3.bytes > EAGER_PARTIAL_JSON_BYTES && !completed && state3.bytes - state3.last_parsed_bytes < minimumGrowth) {
     return false;
   }
   return true;
 }
-function reservePartialJSONParse(state2, budget) {
-  if (budget.work + state2.bytes > MAX_PARTIAL_JSON_PARSE_WORK) {
+function reservePartialJSONParse(state3, budget) {
+  if (budget.work + state3.bytes > MAX_PARTIAL_JSON_PARSE_WORK) {
     return false;
   }
-  budget.work += state2.bytes;
-  state2.work += state2.bytes;
-  state2.last_parsed_bytes = state2.bytes;
+  budget.work += state3.bytes;
+  state3.work += state3.bytes;
+  state3.last_parsed_bytes = state3.bytes;
   return true;
 }
 function captureStructuredJSONSnapshot(snapshot, property) {
@@ -7556,10 +7604,10 @@ function mapCapturedSnapshotArray(array, maximum, kind, map) {
   return mapped;
 }
 function validateStructuredJSONSnapshot(value, budget, validationWorkBudget) {
-  const state2 = createPartialJSONParseState();
+  const state3 = createPartialJSONParseState();
   const parseBudget = budget ?? { bytes: 0, fragments: 0, work: 0 };
-  recordPartialJSONFragment(state2, parseBudget, value, validationWorkBudget);
-  if (!reservePartialJSONParse(state2, parseBudget)) {
+  recordPartialJSONFragment(state3, parseBudget, value, validationWorkBudget);
+  if (!reservePartialJSONParse(state3, parseBudget)) {
     throw new OpenAIError("Chat completion stream exceeded its structured JSON parse-work limit");
   }
   return value;
@@ -8352,11 +8400,11 @@ var init_ChatCompletionStream = __esm({
         __classPrivateFieldSet(this, _ChatCompletionStream_currentChatCompletionSnapshot, void 0, "f");
         __classPrivateFieldSet(this, _ChatCompletionStream_partialJSONParseBudget, { bytes: 0, fragments: 0, work: 0 }, "f");
       }, _ChatCompletionStream_getChoiceEventState = function _ChatCompletionStream_getChoiceEventState2(choice) {
-        let state2 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
-        if (state2) {
-          return state2;
+        let state3 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
+        if (state3) {
+          return state3;
         }
-        state2 = {
+        state3 = {
           content_done: false,
           content_parse_state: void 0,
           refusal_done: false,
@@ -8367,8 +8415,8 @@ var init_ChatCompletionStream = __esm({
           tool_call_parse_states: /* @__PURE__ */ new Map(),
           tool_call_identities: /* @__PURE__ */ new Map()
         };
-        __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index] = state2;
-        return state2;
+        __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index] = state3;
+        return state3;
       }, _ChatCompletionStream_addChunk = function _ChatCompletionStream_addChunk2(chunk) {
         if (this.ended) {
           return;
@@ -8413,21 +8461,21 @@ var init_ChatCompletionStream = __esm({
               snapshot: choiceSnapshot.logprobs?.refusal ?? []
             });
           }
-          const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+          const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
           if (choiceSnapshot.finish_reason) {
             __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
-            if (state2.current_tool_call_index != null) {
-              __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state2.current_tool_call_index);
+            if (state3.current_tool_call_index != null) {
+              __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state3.current_tool_call_index);
             }
           }
           for (const toolCall of capturedToolCalls) {
-            if (state2.current_tool_call_index !== toolCall.index) {
+            if (state3.current_tool_call_index !== toolCall.index) {
               __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
-              if (state2.current_tool_call_index != null) {
-                __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state2.current_tool_call_index);
+              if (state3.current_tool_call_index != null) {
+                __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state3.current_tool_call_index);
               }
             }
-            state2.current_tool_call_index = toolCall.index;
+            state3.current_tool_call_index = toolCall.index;
           }
           for (const toolCallDelta of capturedToolCalls) {
             const toolCallSnapshot = messageSnapshot.tool_calls?.[toolCallDelta.index];
@@ -8435,7 +8483,7 @@ var init_ChatCompletionStream = __esm({
               continue;
             }
             if (toolCallSnapshot.type === "function") {
-              const boundIdentity = state2.tool_call_identities.get(toolCallDelta.index);
+              const boundIdentity = state3.tool_call_identities.get(toolCallDelta.index);
               let argumentsSnapshot;
               if (boundIdentity?.parseable) {
                 const capturedArguments = captureStructuredJSONSnapshot(toolCallSnapshot.function, "arguments");
@@ -8459,8 +8507,8 @@ var init_ChatCompletionStream = __esm({
           }
         }
       }, _ChatCompletionStream_emitToolCallDoneEvent = function _ChatCompletionStream_emitToolCallDoneEvent2(choiceSnapshot, toolCallIndex) {
-        const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
-        if (state2.done_tool_calls.has(toolCallIndex)) {
+        const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+        if (state3.done_tool_calls.has(toolCallIndex)) {
           return;
         }
         const messageSnapshot = __classPrivateFieldGet(this, _ChatCompletionStream_hasAutoParseableTool, "f") ? captureStructuredMessageSnapshot(choiceSnapshot) : choiceSnapshot.message;
@@ -8468,7 +8516,7 @@ var init_ChatCompletionStream = __esm({
         if (!toolCallSnapshot) {
           throw new Error("no tool call snapshot");
         }
-        const boundIdentity = state2.tool_call_identities.get(toolCallIndex);
+        const boundIdentity = state3.tool_call_identities.get(toolCallIndex);
         if (boundIdentity) {
           assertBoundToolCallIdentity(toolCallSnapshot, boundIdentity);
         }
@@ -8498,7 +8546,7 @@ var init_ChatCompletionStream = __esm({
             parsedArguments = parseResponseFormatContent({ type: "json_schema", $parseRaw: void 0 }, validateStructuredJSONSnapshot(argumentsSnapshot));
           }
           if (choiceSnapshot.finish_reason) {
-            state2.done_tool_calls.add(toolCallIndex);
+            state3.done_tool_calls.add(toolCallIndex);
           }
           this._emit("tool_calls.function.arguments.done", {
             name: toolCallSnapshot.function.name,
@@ -8510,33 +8558,33 @@ var init_ChatCompletionStream = __esm({
           assertNever2(toolCallSnapshot);
         }
       }, _ChatCompletionStream_emitContentDoneEvents = function _ChatCompletionStream_emitContentDoneEvents2(choiceSnapshot) {
-        const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+        const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
         const structuredResponse = isParseableResponseFormat(__classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.response_format);
         const boundedSnapshot = structuredResponse || __classPrivateFieldGet(this, _ChatCompletionStream_hasAutoParseableTool, "f");
         const messageSnapshot = boundedSnapshot ? captureStructuredMessageSnapshot(choiceSnapshot) : choiceSnapshot.message;
         const refusal = boundedSnapshot ? captureStructuredJSONSnapshot(messageSnapshot, "refusal") : messageSnapshot.refusal;
         const parseableContent = !refusal && structuredResponse;
         const content = parseableContent ? captureStructuredJSONSnapshot(messageSnapshot, "content") : messageSnapshot.content;
-        if (content != null && (content !== "" || !refusal && !messageSnapshot.tool_calls?.length && !messageSnapshot.function_call) && !state2.content_done) {
+        if (content != null && (content !== "" || !refusal && !messageSnapshot.tool_calls?.length && !messageSnapshot.function_call) && !state3.content_done) {
           if (parseableContent && __classPrivateFieldGet(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f")) {
             __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_validateStructuredSnapshots).call(this, __classPrivateFieldGet(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f"));
           }
-          state2.content_done = true;
+          state3.content_done = true;
           this._emit("content.done", {
             content,
             parsed: refusal ? null : parseResponseFormatContent(__classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.response_format, parseableContent ? validateStructuredJSONSnapshot(content) : content)
           });
         }
-        if (refusal && !state2.refusal_done) {
-          state2.refusal_done = true;
+        if (refusal && !state3.refusal_done) {
+          state3.refusal_done = true;
           this._emit("refusal.done", { refusal });
         }
-        if (choiceSnapshot.logprobs?.content && !state2.logprobs_content_done) {
-          state2.logprobs_content_done = true;
+        if (choiceSnapshot.logprobs?.content && !state3.logprobs_content_done) {
+          state3.logprobs_content_done = true;
           this._emit("logprobs.content.done", { content: choiceSnapshot.logprobs.content });
         }
-        if (choiceSnapshot.logprobs?.refusal && !state2.logprobs_refusal_done) {
-          state2.logprobs_refusal_done = true;
+        if (choiceSnapshot.logprobs?.refusal && !state3.logprobs_refusal_done) {
+          state3.logprobs_refusal_done = true;
           this._emit("logprobs.refusal.done", { refusal: choiceSnapshot.logprobs.refusal });
         }
       }, _ChatCompletionStream_validateStructuredSnapshots = function _ChatCompletionStream_validateStructuredSnapshots2(snapshot) {
@@ -8564,11 +8612,11 @@ var init_ChatCompletionStream = __esm({
             toolCallCollection: toolCalls,
             toolCalls: validatedTools
           }));
-          const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
+          const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
           if (parseableContent && !refusal && typeof content === "string") {
             validateStructuredJSONSnapshot(content, finalJSONBudget, __classPrivateFieldGet(this, _ChatCompletionStream_partialJSONParseBudget, "f"));
           }
-          for (const [index, identity] of state2?.tool_call_identities ?? []) {
+          for (const [index, identity] of state3?.tool_call_identities ?? []) {
             const toolCall = toolCalls && captureSnapshotArrayItem(toolCalls, index);
             if (!toolCall) {
               throw new OpenAIError("Chat completion stream contains a changed tool call identity");
@@ -16344,7 +16392,7 @@ var init_agent_session_stream = __esm({
       externalSignal?.addEventListener("abort", abort, { once: true });
       this.controller.signal.addEventListener("abort", abort, { once: true });
       const options = { ...__classPrivateFieldGet(this, _AgentSessionStream_options, "f"), signal: this.controller.signal };
-      const state2 = new TurnState();
+      const state3 = new TurnState();
       try {
         if (externalSignal?.aborted) {
           this.abort(externalSignal.reason);
@@ -16370,11 +16418,11 @@ var init_agent_session_stream = __esm({
         __classPrivateFieldSet(this, _AgentSessionStream_reading, true, "f");
         for await (const event of __classPrivateFieldGet(this, _AgentSessionStream_stream, "f")) {
           __classPrivateFieldGet(this, _AgentSessionStream_instances, "m", _AgentSessionStream_checkAbort).call(this);
-          if (!state2.accept(event)) {
+          if (!state3.accept(event)) {
             continue;
           }
-          const terminal = state2.terminal(event);
-          const dispatch = __classPrivateFieldGet(this, _AgentSessionStream_dispatcher, "f").prepare(state2.call(event), __classPrivateFieldGet(this, _AgentSessionStream_sessionID, "f"));
+          const terminal = state3.terminal(event);
+          const dispatch = __classPrivateFieldGet(this, _AgentSessionStream_dispatcher, "f").prepare(state3.call(event), __classPrivateFieldGet(this, _AgentSessionStream_sessionID, "f"));
           if (terminal) {
             __classPrivateFieldGet(this, _AgentSessionStream_stream, "f").controller.abort();
           }
@@ -16410,13 +16458,13 @@ var init_agent_session_stream = __esm({
 
 // node_modules/openai/lib/beta/agents/agent-session-create-stream.mjs
 async function* dispatchCreationTools(source, dispatcher, signal) {
-  const state2 = new TurnState();
+  const state3 = new TurnState();
   let sessionID;
   for await (const event of { [Symbol.asyncIterator]: source }) {
     if (event.type === "agent.session.created") {
       sessionID ?? (sessionID = event.session.id);
     }
-    const dispatch = state2.accept(event) ? dispatcher.prepare(state2.call(event), sessionID) : void 0;
+    const dispatch = state3.accept(event) ? dispatcher.prepare(state3.call(event), sessionID) : void 0;
     yield event;
     if (signal.aborted) {
       return;
@@ -26883,15 +26931,26 @@ async function testLLM() {
       };
     }
     context.push(...toResponseInputItems(response.output));
-    const results = await Promise.all(
-      calls.map(async (call) => ({
+    console.log("Entering tool output handling");
+    console.log("Calls:", calls);
+    console.log("Calls count:", calls?.length);
+    const results = [];
+    for (const call of calls) {
+      console.log("Processing:", call);
+      const args = JSON.parse(call.arguments);
+      console.log("Arguments:", args);
+      const result = await run(call.name, args);
+      console.log("Run result:", result);
+      const output = result?.text;
+      console.log("Output:", output);
+      results.push({
         type: "function_call_output",
         call_id: call.call_id,
-        output: String(
-          await run(call.name, JSON.parse(call.arguments))
-        )
-      }))
-    );
+        output: typeof output === "string" ? output : JSON.stringify(result)
+      });
+    }
+    console.log("Final results:", results);
+    console.log("All tool results:", results);
     context.push(...results);
   }
 }
@@ -26927,7 +26986,6 @@ var require_main = __commonJS({
     init_llm();
     init_api();
     async function main() {
-      await chrome.storage.local.clear();
       syncCatalog();
       track_tabs();
       await connect();

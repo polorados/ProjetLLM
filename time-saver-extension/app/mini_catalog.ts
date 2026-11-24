@@ -32,16 +32,16 @@ export async function searchCatalog(
 ): Promise<CatalogData> {
   const catalog = await getCatalog();
   const out = catalog.entries.filter((e: { needs: string | string[]; }) => e.needs.includes(need));
-  console.log("Result of searchCatalog : ", out);
   return out
 }
 
 // TODO: implem ceci plus tard
 export async function getInstalled(): Promise<InstalledExtensionList> {
   const all = await chrome.management.getAll();
-  return {installedExtensions: all
+  const out = {installedExtensions: all
     .filter((e) => e.type === 'extension' && e.id !== chrome.runtime.id)
     .slice(0, 100)
     .map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }))
   }
+  return out;
 }

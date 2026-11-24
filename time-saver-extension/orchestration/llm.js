@@ -1,11 +1,11 @@
-import { SYSTEM_PROMPT, FIRST_MESSAGE, WEB_SEARCH, TOOL_DEFS, run } from './mini_tools.js';
+import { SYSTEM_PROMPT, FIRST_MESSAGE, WEB_SEARCH, TOOL_DEFS, run, TEST_PROMPT } from './mini_tools.js';
 import { toResponseInputItems } from "openai/lib/responses/ResponseInputItems";
 import { getClient } from './api.js';
 import { getPreviousConclusion } from '../app/history.js';
 
 
 export async function testLLM() {
-    let context = [{ role: "user", content: FIRST_MESSAGE }];
+    let context = [{ role: "user", content: TEST_PROMPT }];
 
     while (true) {
         const response = await sendMessage(context);
@@ -28,16 +28,35 @@ export async function testLLM() {
 
         context.push(...toResponseInputItems(response.output));
 
-        const results = await Promise.all(
-            calls.map(async call => ({
+        console.log("Entering tool output handling");
+        console.log("Calls:", calls);
+        console.log("Calls count:", calls?.length);
+        const results = [];
+
+        for (const call of calls) {
+            console.log("Processing:", call);
+
+            const args = JSON.parse(call.arguments);
+            console.log("Arguments:", args);
+
+            const result = await run(call.name, args);
+            console.log("Run result:", result);
+
+            const output = result?.text;
+            console.log("Output:", output);
+
+            results.push({
                 type: "function_call_output",
                 call_id: call.call_id,
-                output: String(
-                    await run(call.name, JSON.parse(call.arguments))
-                )
-            }))
-        );
+                output: typeof output === "string"
+                    ? output
+                    : JSON.stringify(result)
+            });
+        }
 
+        console.log("Final results:", results);
+
+console.log("All tool results:", results);
         context.push(...results);
     }
 }

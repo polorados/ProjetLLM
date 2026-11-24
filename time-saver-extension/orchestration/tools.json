@@ -354,5 +354,54 @@
       }
     },
     "strict": true
+  },
+  {
+    "type": "function",
+    "name": "getInstalled",
+    "description": "get the list of installed extension on the chrome browser",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false,
+      "$defs": {}
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "saveConclusion",
+    "description": "save the conclusion made from events\n(to keep some history)",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "conclusion": {
+          "type": "string"
+        },
+        "newNote": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "conclusion",
+        "newNote"
+      ],
+      "additionalProperties": false,
+      "$defs": {}
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "getPreviousConclusion",
+    "description": "get the previous conclusion drawn during the previous reflexion",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false,
+      "$defs": {}
+    },
+    "strict": true
   }
 ]
