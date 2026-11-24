@@ -375,16 +375,20 @@
     "parameters": {
       "type": "object",
       "properties": {
-        "conclusion": {
+        "events": {
           "type": "string"
         },
-        "newNote": {
+        "recommendations": {
+          "type": "string"
+        },
+        "others": {
           "type": "string"
         }
       },
       "required": [
-        "conclusion",
-        "newNote"
+        "events",
+        "recommendations",
+        "others"
       ],
       "additionalProperties": false,
       "$defs": {}

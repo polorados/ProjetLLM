@@ -54,6 +54,7 @@ export interface CatalogData {
 }
 
 export interface Conclusion {
-  conclusion:string | null,
-  notes:string | null
+  events:string | null,
+  recommendations:string | null,
+  others: string | null
 }

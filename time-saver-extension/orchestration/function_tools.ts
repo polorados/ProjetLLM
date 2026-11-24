@@ -50,9 +50,9 @@ export class Function_Tools {
     /** save the conclusion made from events 
      * (to keep some history) */
     saveConclusion(
-        params: { conclusion: string; newNote: string }
+        params: { events: string; recommendations: string, others: string }
     ): { success: boolean } {
-        return saveConclusion(params.conclusion, params.newNote);
+        return saveConclusion(params.events, params.recommendations, params.others);
     }
 
     /** get the previous conclusion drawn during the previous reflexion */
