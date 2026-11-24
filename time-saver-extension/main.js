@@ -100,6 +100,7 @@ async function main() {
     );
 
     // // testing
+    // let res = "failed";
     // while (res == "failed") {
     //     await sleep(2000);
     //     res = await testLLM();

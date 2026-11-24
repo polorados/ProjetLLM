@@ -1,2 +1,3 @@
 node_modules/
 .ttsc/
+time-saver-extension/dist/main.js
