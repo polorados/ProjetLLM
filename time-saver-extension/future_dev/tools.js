@@ -3,8 +3,8 @@
 // TOOL_DEFS est un objet pour que le LLM sache quels outils
 // sont à sa disposition
 
-import { per_id, per_event, per_url } from './../data_aggregator.js';
-import { searchCatalog, NEEDS } from './mini_catalog.js';
+import { per_id, per_event, per_url } from './../app/data_aggregator.js';
+import { searchCatalog, NEEDS } from '../app/mini_catalog.js';
 // TODO: implem ceci plus tard
 export const TOOL_DEFS = [
     {
@@ -202,14 +202,29 @@ export function createToolRunner(){
     },
   };
 
+  // async function run(name, input) {
+  //   const impl = impls[name];
+  //   if (!impl) return { text: JSON.stringify({ error: `outil inconnu : ${name}` }), isError: true };
+  //   try {
+  //     const out = await impl(input && typeof input === 'object' ? input : {});
+  //     const isError = Boolean(out && typeof out === 'object' && out.error);
+  //     return { text: typeof out === 'string' ? out : JSON.stringify(out), isError };
+  //   } catch (e) {
+  //     return { text: JSON.stringify({ error: String(e?.message ?? e) }), isError: true };
+  //   }
+  // }
+
   async function run(name, input) {
+    console.log(`🛠️ [Tool Called] Le LLM appelle l'outil '${name}' avec :`, input);
     const impl = impls[name];
     if (!impl) return { text: JSON.stringify({ error: `outil inconnu : ${name}` }), isError: true };
     try {
       const out = await impl(input && typeof input === 'object' ? input : {});
+      console.log(`✅ [Tool Result] Ce que '${name}' renvoie au LLM :`, out); // <-- Regardez ceci de très près
       const isError = Boolean(out && typeof out === 'object' && out.error);
       return { text: typeof out === 'string' ? out : JSON.stringify(out), isError };
     } catch (e) {
+      console.error(`❌ [Tool Error] ${name}:`, e);
       return { text: JSON.stringify({ error: String(e?.message ?? e) }), isError: true };
     }
   }
@@ -218,9 +233,14 @@ export function createToolRunner(){
 }
 
 export const WEB_SEARCH = {
-  enabled: false,
-  maxUses: 2,
-  allowedDomains: ['chromewebstore.google.com', 'developer.chrome.com', 'support.google.com'],
+    type: "web_search",
+    filters: {
+        allowed_domains: [
+            "chromewebstore.google.com",
+            "developer.chrome.com",
+            "support.google.com"
+        ]
+    }
 };
 
 export const FIRST_MESSAGE = "Hello World";

@@ -1,11 +1,12 @@
 import { SYSTEM_PROMPT } from './mini_prompt.js';
-import { WEB_SEARCH, FIRST_MESSAGE, TOOL_DEFS, run, TEST_PROMPT } from './mini_tools.js';
+import { TOOL_DEFS, createToolRunner, WEB_SEARCH, FIRST_MESSAGE } from '../future_dev/tools.js';
 import { toResponseInputItems } from "openai/lib/responses/ResponseInputItems";
 import { getClient } from './api.js';
 
 
 export async function testLLM() {
-    let context = [{ role: "user", content: TEST_PROMPT }];
+    const { run, state } = createToolRunner();
+    let context = [{ role: "user", content: FIRST_MESSAGE }];
 
     while (true) {
         const response = await sendMessage(context);
@@ -19,7 +20,11 @@ export async function testLLM() {
 
         if (calls.length === 0) {
             console.log("Final answer:", response.output_text);
-            return response.output_text;
+            console.log("Recommandation finales stockées :", state.recommendations);
+            return {
+                text: response.output_text,
+                recommendations: state.recommendations,
+            };
         }
 
         context.push(...toResponseInputItems(response.output));
@@ -42,7 +47,7 @@ export async function sendMessage(input) {
     const client = getClient();
     return await client.responses.create({
         model: "gpt-6-astra",
-        // instructions: SYSTEM_PROMPT,
+        instructions: SYSTEM_PROMPT,
         input: input,
         tools: [
             WEB_SEARCH,
