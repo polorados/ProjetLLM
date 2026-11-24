@@ -5,19 +5,71 @@ export { TOOL_DEFS };
 
 const functionTools = new Function_Tools();
 
-const impls = {
-    per_id: ({ events } = {})       => functionTools.per_id({ events }),
-    per_event: ({ events } = {})    => functionTools.per_event({ events }),
-    per_url: ({ events } = {})      => functionTools.per_url({ events }),
-    searchCatalog: ({ need })       => functionTools.searchCatalog({ need }),
-};
+// Renvoie { run, state}
+// 'state' mémorise le résultat final 
+export function createToolRunner(){
+  const state = { previous_conclusion: null };
 
-export async function run(name, input) {
+  const impls = {
+    async per_id({ events } = {}) {
+      return await functionTools.per_id({events});
+    },
+
+    async per_event({ events } = {}) {
+      return await functionTools.per_event({events});
+    },
+
+    async per_url({ events } = {}) {
+      return await functionTools.per_url({events});
+    },
+    
+    async search_catalog({needs}) {
+      return await functionTools.searchCatalog({needs});
+      // return results.map((e) => ({
+      //   id: e.id,
+      //   type: e.type,
+      //   name: e.name,
+      //   summary: e.summary,
+      //   needs: e.needs,
+      //   url: e.url,
+      //   shortcut: e.shortcut ?? null,
+      //   last_verified: e.last_verified,
+      // }));
+    },
+
+    async get_installed_extensions() {
+      return await getInstalled();
+    },
+
+    async submit_conclusion({ conclusion, notes = '' }) {
+      state.conclusion = conclusion;
+      state.notes = typeof notes === 'string' ? notes.slice(0, 300) : '';
+    },
+
+    async get_previous_conclusion() {
+        return state
+    }
+  };
+
+  async function run(name, input) {
+    console.log(`[Tool Called] Le LLM appelle l'outil '${name}' avec :`, input);
     const impl = impls[name];
 
-    if (!impl) throw new Error(`Unknown tool: ${name}`);
+    if (!impl) return { text: JSON.stringify({ error: `outil inconnu : ${name}` }), isError: true };
 
-    return await impl(input ?? {});
+    try {
+      const out = await impl(input && typeof input === 'object' ? input : {});
+
+      console.log(`[Tool Result] Ce que '${name}' renvoie au LLM :`, out); // <-- Regardez ceci de très près
+      const isError = Boolean(out && typeof out === 'object' && out.error);
+      return { text: typeof out === 'string' ? out : JSON.stringify(out), isError };
+    } catch (e) {
+      console.error(`[Tool Error] ${name}:`, e);
+      return { text: JSON.stringify({ error: String(e?.message ?? e) }), isError: true };
+    }
+  }
+
+  return { run, state };
 }
 
 

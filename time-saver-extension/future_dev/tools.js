@@ -151,14 +151,6 @@ export const TOOL_DEFS = [
   },
 ];
 
-// TODO: implem ceci plus tard
-export async function getInstalled() {
-  const all = await chrome.management.getAll();
-  return all
-    .filter((e) => e.type === 'extension' && e.id !== chrome.runtime.id)
-    .slice(0, 100)
-    .map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }));
-}
 
 // Renvoie { run, state}
 // 'state' mémorise le résultat final 

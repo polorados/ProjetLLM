@@ -4,20 +4,24 @@ let client = null;
 let apiKey;
 
 export async function connect() {
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    while (true) {
+        const result = await chrome.storage.local.get("apiKey");
+        const apiKey = result.apiKey;
 
-    while (!apiKey) {
-        await sleep(1000);
-        console.log("trying to get the api key")
-        apiKey = await chrome.storage.local.get("apiKey");
+        if (apiKey) {
+            console.log("API key retrieved");
+
+            client = new OpenAI({
+                apiKey,
+                dangerouslyAllowBrowser: true
+            });
+
+            return client;
+        }
+
+        console.log("Waiting for API key...");
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
-
-    client = new OpenAI({
-        apiKey,
-        dangerouslyAllowBrowser: true
-    });
-
-    return client;
 }
 
 export function getClient() {

@@ -45,7 +45,7 @@ export async function testLLM() {
 export async function sendMessage(input) {
     const client = getClient();
     return await client.responses.create({
-        model: "gpt-6-astra",
+        model: "gpt-6-luna",
         instructions: SYSTEM_PROMPT,
         input: input,
         tools: [
