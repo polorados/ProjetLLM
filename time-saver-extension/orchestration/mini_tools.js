@@ -8,7 +8,7 @@ const functionTools = new Function_Tools();
 // Renvoie { run, state}
 // 'state' mémorise le résultat final 
 export function createToolRunner(){
-  const state = { recommendations: null, events: null };
+  const state = { previous_conclusion: null };
 
   const impls = {
     async per_id({ events } = {}) {
@@ -41,17 +41,12 @@ export function createToolRunner(){
       return await getInstalled();
     },
 
-    async submit_recommendations({ recommendations, notes = '' }) {
-      state.recommendations = recommendations;
+    async submit_conclusion({ conclusion, notes = '' }) {
+      state.conclusion = conclusion;
       state.notes = typeof notes === 'string' ? notes.slice(0, 300) : '';
     },
-    
-    async submit_events({ events, notes = '' }) {
-        state.events = events;
-        state.notes = typeof notes === 'string' ? notes.slice(0, 300) : '';
-    },
 
-    async get_state() {
+    async get_previous_conclusion() {
         return state
     }
   };
