@@ -149,11 +149,12 @@ async function searchCatalog(need) {
   const out = catalog.entries.filter((e) => e.needs.includes(need));
   return out;
 }
-async function getInstalled2() {
+async function getInstalled() {
   const all = await chrome.management.getAll();
-  return {
+  const out = {
     installedExtensions: all.filter((e) => e.type === "extension" && e.id !== chrome.runtime.id).slice(0, 100).map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }))
   };
+  return out;
 }
 var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY;
 var init_mini_catalog = __esm({
@@ -169,6 +170,7 @@ var init_mini_catalog = __esm({
 function saveConclusion(conclusion, newNotes = "") {
   previousConclusion = conclusion;
   notes = newNotes;
+  return { success: true };
 }
 function getPreviousConclusion() {
   return {
@@ -212,13 +214,14 @@ var init_function_tools = __esm({
       }
       /** get the list of installed extension on the chrome browser */
       getInstalled() {
-        return getInstalled2();
+        return getInstalled();
       }
       /** save the conclusion made from events 
        * (to keep some history) */
       saveConclusion(params) {
-        saveConclusion(params.conclusion, params.newNote);
+        return saveConclusion(params.conclusion, params.newNote);
       }
+      /** get the previous conclusion drawn during the previous reflexion */
       getPreviousConclusion() {
         return getPreviousConclusion();
       }
@@ -646,7 +649,7 @@ async function run(name, input) {
   if (!impl) throw new Error(`Unknown tool: ${name}`);
   return await impl(input ?? {});
 }
-var functionTools, impls, WEB_SEARCH, FIRST_MESSAGE, SYSTEM_PROMPT;
+var functionTools, impls, WEB_SEARCH, TEST_PROMPT, SYSTEM_PROMPT;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
@@ -657,8 +660,10 @@ var init_mini_tools = __esm({
       per_id: ({ events } = {}) => functionTools.per_id({ events }),
       per_event: ({ events } = {}) => functionTools.per_event({ events }),
       per_url: ({ events } = {}) => functionTools.per_url({ events }),
-      searchCatalog: ({ need }) => functionTools.searchCatalog({ need }),
-      get_installed_extensions: () => functionTools.getInstalled()
+      searchCatalog: ({ need } = {}) => functionTools.searchCatalog({ need }),
+      getInstalled: () => functionTools.getInstalled(),
+      saveConclusion: ({ conclusion, newNote } = {}) => functionTools.saveConclusion({ conclusion, newNote }),
+      getPreviousConclusion: () => functionTools.getPreviousConclusion()
     };
     WEB_SEARCH = {
       type: "web_search",
@@ -670,15 +675,15 @@ var init_mini_tools = __esm({
         ]
       }
     };
-    FIRST_MESSAGE = "Hello World";
+    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
     SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue.
 
 D\xC9MARCHE
 1. Appelle per_id, per_event et per_url, et getPreviousConclusion pour utiliser des conclusion pass\xE9es .
 2. D\xE9duis 1 \xE0 3 besoins, uniquement parmi ceux accept\xE9s par search_catalog.
-3. Appelle search_catalog avec les besoins que tu as trouv\xE9. Appelle get_installed_extensions si tu veux \xE9viter de recommander quelque chose qui fait d\xE9j\xE0 double emploi avec une extension de l'utilisateur.
+3. Appelle searchCatalog avec les besoins que tu as trouv\xE9. Appelle getInstalled si tu veux \xE9viter de recommander quelque chose qui fait d\xE9j\xE0 double emploi avec une extension de l'utilisateur.
 4. Si le catalogue couvre mal le besoin et que la recherche web est disponible, fais au plus 2 recherches, puis recommande l'extension \xE0 l'utilisateur si elle semble pertinente.
-5. Termine toujours en appelant saveConclusion : au plus 3 recommandations, et une raison courte en fran\xE7ais (une phrase) fond\xE9e sur les donn\xE9es observ\xE9es. S'il n'y a pas de signal clair, ne pas envoyer de reccomendations et mettre les informations qui ont pu \xEAtre tir\xE9e dans saveConclusion.`;
+5. Termine toujours en appelant saveConclusion`;
   }
 });
 
@@ -797,21 +802,21 @@ var init_ResponseInputItems = __esm({
 });
 
 // node_modules/openai/internal/tslib.mjs
-function __classPrivateFieldSet(receiver, state3, value, kind, f) {
+function __classPrivateFieldSet(receiver, state2, value, kind, f) {
   if (kind === "m")
     throw new TypeError("Private method is not writable");
   if (kind === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state3 === "function" ? receiver !== state3 || !f : !state3.has(receiver))
+  if (typeof state2 === "function" ? receiver !== state2 || !f : !state2.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state3.set(receiver, value), value;
+  return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state2.set(receiver, value), value;
 }
-function __classPrivateFieldGet(receiver, state3, kind, f) {
+function __classPrivateFieldGet(receiver, state2, kind, f) {
   if (kind === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state3 === "function" ? receiver !== state3 || !f : !state3.has(receiver))
+  if (typeof state2 === "function" ? receiver !== state2 || !f : !state2.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state3.get(receiver);
+  return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state2.get(receiver);
 }
 var init_tslib = __esm({
   "node_modules/openai/internal/tslib.mjs"() {
@@ -3564,12 +3569,12 @@ var require_x509_transport_state = __commonJS({
 });
 
 // node_modules/openai/internal/auth/x509-transport-state.mjs
-var nodeState, state2, findRegisteredX509Transport3, rememberRegisteredX509Transport2, markTransientX509ConnectionError2, isTransientX509ConnectionError2, markRetryableX509IssuerError2, isRetryableX509IssuerError2, markApprovedX509Client2, isApprovedX509Client2, rememberX509OAuthError2, findX509OAuthError2, rememberX509Credential2, findX509Credential2;
+var nodeState, state, findRegisteredX509Transport3, rememberRegisteredX509Transport2, markTransientX509ConnectionError2, isTransientX509ConnectionError2, markRetryableX509IssuerError2, isRetryableX509IssuerError2, markApprovedX509Client2, isApprovedX509Client2, rememberX509OAuthError2, findX509OAuthError2, rememberX509Credential2, findX509Credential2;
 var init_x509_transport_state = __esm({
   "node_modules/openai/internal/auth/x509-transport-state.mjs"() {
     init_x509_transport_state_browser();
     nodeState = __toESM(require_x509_transport_state(), 1);
-    state2 = typeof nodeState.findRegisteredX509Transport === "function" ? nodeState : x509_transport_state_browser_exports;
+    state = typeof nodeState.findRegisteredX509Transport === "function" ? nodeState : x509_transport_state_browser_exports;
     ({
       findRegisteredX509Transport: findRegisteredX509Transport3,
       rememberRegisteredX509Transport: rememberRegisteredX509Transport2,
@@ -3583,7 +3588,7 @@ var init_x509_transport_state = __esm({
       findX509OAuthError: findX509OAuthError2,
       rememberX509Credential: rememberX509Credential2,
       findX509Credential: findX509Credential2
-    } = state2);
+    } = state);
   }
 });
 
@@ -7439,18 +7444,18 @@ function createPartialJSONParseState() {
     pending_high_surrogate: false
   };
 }
-function recordPartialJSONFragment(state3, budget, fragment, validationWorkBudget) {
+function recordPartialJSONFragment(state2, budget, fragment, validationWorkBudget) {
   if (budget.fragments >= MAX_PARTIAL_JSON_FRAGMENTS) {
     throw new OpenAIError("Chat completion stream exceeded its structured JSON fragment limit");
   }
   let bytes = 0;
-  let { depth, escaped, has_non_whitespace: hasNonWhitespace, in_string: inString } = state3;
+  let { depth, escaped, has_non_whitespace: hasNonWhitespace, in_string: inString } = state2;
   let completed = false;
   let firstCharacter = true;
   for (const character of fragment) {
     const previousBytes = bytes;
     const codePoint = character.codePointAt(0);
-    if (firstCharacter && state3.pending_high_surrogate && codePoint >= 56320 && codePoint <= 57343) {
+    if (firstCharacter && state2.pending_high_surrogate && codePoint >= 56320 && codePoint <= 57343) {
       bytes += 1;
     } else if (codePoint <= 127) {
       bytes += 1;
@@ -7495,15 +7500,15 @@ function recordPartialJSONFragment(state3, budget, fragment, validationWorkBudge
       completed || (completed = depth === 0);
     }
   }
-  state3.bytes += bytes;
-  state3.fragments += 1;
-  state3.depth = depth;
-  state3.escaped = escaped;
-  state3.has_non_whitespace = hasNonWhitespace;
-  state3.in_string = inString;
+  state2.bytes += bytes;
+  state2.fragments += 1;
+  state2.depth = depth;
+  state2.escaped = escaped;
+  state2.has_non_whitespace = hasNonWhitespace;
+  state2.in_string = inString;
   if (fragment.length > 0) {
     const finalCodeUnit = fragment.codePointAt(fragment.length - 1) ?? 0;
-    state3.pending_high_surrogate = finalCodeUnit >= 55296 && finalCodeUnit <= 56319;
+    state2.pending_high_surrogate = finalCodeUnit >= 55296 && finalCodeUnit <= 56319;
   }
   budget.bytes += bytes;
   budget.fragments += 1;
@@ -7513,19 +7518,19 @@ function recordPartialJSONFragment(state3, budget, fragment, validationWorkBudge
   if (!hasNonWhitespace || bytes === 0) {
     return false;
   }
-  const minimumGrowth = Math.max(EAGER_PARTIAL_JSON_BYTES, Math.floor(state3.last_parsed_bytes / 2));
-  if (state3.bytes > EAGER_PARTIAL_JSON_BYTES && !completed && state3.bytes - state3.last_parsed_bytes < minimumGrowth) {
+  const minimumGrowth = Math.max(EAGER_PARTIAL_JSON_BYTES, Math.floor(state2.last_parsed_bytes / 2));
+  if (state2.bytes > EAGER_PARTIAL_JSON_BYTES && !completed && state2.bytes - state2.last_parsed_bytes < minimumGrowth) {
     return false;
   }
   return true;
 }
-function reservePartialJSONParse(state3, budget) {
-  if (budget.work + state3.bytes > MAX_PARTIAL_JSON_PARSE_WORK) {
+function reservePartialJSONParse(state2, budget) {
+  if (budget.work + state2.bytes > MAX_PARTIAL_JSON_PARSE_WORK) {
     return false;
   }
-  budget.work += state3.bytes;
-  state3.work += state3.bytes;
-  state3.last_parsed_bytes = state3.bytes;
+  budget.work += state2.bytes;
+  state2.work += state2.bytes;
+  state2.last_parsed_bytes = state2.bytes;
   return true;
 }
 function captureStructuredJSONSnapshot(snapshot, property) {
@@ -7604,10 +7609,10 @@ function mapCapturedSnapshotArray(array, maximum, kind, map) {
   return mapped;
 }
 function validateStructuredJSONSnapshot(value, budget, validationWorkBudget) {
-  const state3 = createPartialJSONParseState();
+  const state2 = createPartialJSONParseState();
   const parseBudget = budget ?? { bytes: 0, fragments: 0, work: 0 };
-  recordPartialJSONFragment(state3, parseBudget, value, validationWorkBudget);
-  if (!reservePartialJSONParse(state3, parseBudget)) {
+  recordPartialJSONFragment(state2, parseBudget, value, validationWorkBudget);
+  if (!reservePartialJSONParse(state2, parseBudget)) {
     throw new OpenAIError("Chat completion stream exceeded its structured JSON parse-work limit");
   }
   return value;
@@ -8400,11 +8405,11 @@ var init_ChatCompletionStream = __esm({
         __classPrivateFieldSet(this, _ChatCompletionStream_currentChatCompletionSnapshot, void 0, "f");
         __classPrivateFieldSet(this, _ChatCompletionStream_partialJSONParseBudget, { bytes: 0, fragments: 0, work: 0 }, "f");
       }, _ChatCompletionStream_getChoiceEventState = function _ChatCompletionStream_getChoiceEventState2(choice) {
-        let state3 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
-        if (state3) {
-          return state3;
+        let state2 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
+        if (state2) {
+          return state2;
         }
-        state3 = {
+        state2 = {
           content_done: false,
           content_parse_state: void 0,
           refusal_done: false,
@@ -8415,8 +8420,8 @@ var init_ChatCompletionStream = __esm({
           tool_call_parse_states: /* @__PURE__ */ new Map(),
           tool_call_identities: /* @__PURE__ */ new Map()
         };
-        __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index] = state3;
-        return state3;
+        __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index] = state2;
+        return state2;
       }, _ChatCompletionStream_addChunk = function _ChatCompletionStream_addChunk2(chunk) {
         if (this.ended) {
           return;
@@ -8461,21 +8466,21 @@ var init_ChatCompletionStream = __esm({
               snapshot: choiceSnapshot.logprobs?.refusal ?? []
             });
           }
-          const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+          const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
           if (choiceSnapshot.finish_reason) {
             __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
-            if (state3.current_tool_call_index != null) {
-              __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state3.current_tool_call_index);
+            if (state2.current_tool_call_index != null) {
+              __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state2.current_tool_call_index);
             }
           }
           for (const toolCall of capturedToolCalls) {
-            if (state3.current_tool_call_index !== toolCall.index) {
+            if (state2.current_tool_call_index !== toolCall.index) {
               __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
-              if (state3.current_tool_call_index != null) {
-                __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state3.current_tool_call_index);
+              if (state2.current_tool_call_index != null) {
+                __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state2.current_tool_call_index);
               }
             }
-            state3.current_tool_call_index = toolCall.index;
+            state2.current_tool_call_index = toolCall.index;
           }
           for (const toolCallDelta of capturedToolCalls) {
             const toolCallSnapshot = messageSnapshot.tool_calls?.[toolCallDelta.index];
@@ -8483,7 +8488,7 @@ var init_ChatCompletionStream = __esm({
               continue;
             }
             if (toolCallSnapshot.type === "function") {
-              const boundIdentity = state3.tool_call_identities.get(toolCallDelta.index);
+              const boundIdentity = state2.tool_call_identities.get(toolCallDelta.index);
               let argumentsSnapshot;
               if (boundIdentity?.parseable) {
                 const capturedArguments = captureStructuredJSONSnapshot(toolCallSnapshot.function, "arguments");
@@ -8507,8 +8512,8 @@ var init_ChatCompletionStream = __esm({
           }
         }
       }, _ChatCompletionStream_emitToolCallDoneEvent = function _ChatCompletionStream_emitToolCallDoneEvent2(choiceSnapshot, toolCallIndex) {
-        const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
-        if (state3.done_tool_calls.has(toolCallIndex)) {
+        const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+        if (state2.done_tool_calls.has(toolCallIndex)) {
           return;
         }
         const messageSnapshot = __classPrivateFieldGet(this, _ChatCompletionStream_hasAutoParseableTool, "f") ? captureStructuredMessageSnapshot(choiceSnapshot) : choiceSnapshot.message;
@@ -8516,7 +8521,7 @@ var init_ChatCompletionStream = __esm({
         if (!toolCallSnapshot) {
           throw new Error("no tool call snapshot");
         }
-        const boundIdentity = state3.tool_call_identities.get(toolCallIndex);
+        const boundIdentity = state2.tool_call_identities.get(toolCallIndex);
         if (boundIdentity) {
           assertBoundToolCallIdentity(toolCallSnapshot, boundIdentity);
         }
@@ -8546,7 +8551,7 @@ var init_ChatCompletionStream = __esm({
             parsedArguments = parseResponseFormatContent({ type: "json_schema", $parseRaw: void 0 }, validateStructuredJSONSnapshot(argumentsSnapshot));
           }
           if (choiceSnapshot.finish_reason) {
-            state3.done_tool_calls.add(toolCallIndex);
+            state2.done_tool_calls.add(toolCallIndex);
           }
           this._emit("tool_calls.function.arguments.done", {
             name: toolCallSnapshot.function.name,
@@ -8558,33 +8563,33 @@ var init_ChatCompletionStream = __esm({
           assertNever2(toolCallSnapshot);
         }
       }, _ChatCompletionStream_emitContentDoneEvents = function _ChatCompletionStream_emitContentDoneEvents2(choiceSnapshot) {
-        const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+        const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
         const structuredResponse = isParseableResponseFormat(__classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.response_format);
         const boundedSnapshot = structuredResponse || __classPrivateFieldGet(this, _ChatCompletionStream_hasAutoParseableTool, "f");
         const messageSnapshot = boundedSnapshot ? captureStructuredMessageSnapshot(choiceSnapshot) : choiceSnapshot.message;
         const refusal = boundedSnapshot ? captureStructuredJSONSnapshot(messageSnapshot, "refusal") : messageSnapshot.refusal;
         const parseableContent = !refusal && structuredResponse;
         const content = parseableContent ? captureStructuredJSONSnapshot(messageSnapshot, "content") : messageSnapshot.content;
-        if (content != null && (content !== "" || !refusal && !messageSnapshot.tool_calls?.length && !messageSnapshot.function_call) && !state3.content_done) {
+        if (content != null && (content !== "" || !refusal && !messageSnapshot.tool_calls?.length && !messageSnapshot.function_call) && !state2.content_done) {
           if (parseableContent && __classPrivateFieldGet(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f")) {
             __classPrivateFieldGet(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_validateStructuredSnapshots).call(this, __classPrivateFieldGet(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f"));
           }
-          state3.content_done = true;
+          state2.content_done = true;
           this._emit("content.done", {
             content,
             parsed: refusal ? null : parseResponseFormatContent(__classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.response_format, parseableContent ? validateStructuredJSONSnapshot(content) : content)
           });
         }
-        if (refusal && !state3.refusal_done) {
-          state3.refusal_done = true;
+        if (refusal && !state2.refusal_done) {
+          state2.refusal_done = true;
           this._emit("refusal.done", { refusal });
         }
-        if (choiceSnapshot.logprobs?.content && !state3.logprobs_content_done) {
-          state3.logprobs_content_done = true;
+        if (choiceSnapshot.logprobs?.content && !state2.logprobs_content_done) {
+          state2.logprobs_content_done = true;
           this._emit("logprobs.content.done", { content: choiceSnapshot.logprobs.content });
         }
-        if (choiceSnapshot.logprobs?.refusal && !state3.logprobs_refusal_done) {
-          state3.logprobs_refusal_done = true;
+        if (choiceSnapshot.logprobs?.refusal && !state2.logprobs_refusal_done) {
+          state2.logprobs_refusal_done = true;
           this._emit("logprobs.refusal.done", { refusal: choiceSnapshot.logprobs.refusal });
         }
       }, _ChatCompletionStream_validateStructuredSnapshots = function _ChatCompletionStream_validateStructuredSnapshots2(snapshot) {
@@ -8612,11 +8617,11 @@ var init_ChatCompletionStream = __esm({
             toolCallCollection: toolCalls,
             toolCalls: validatedTools
           }));
-          const state3 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
+          const state2 = __classPrivateFieldGet(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
           if (parseableContent && !refusal && typeof content === "string") {
             validateStructuredJSONSnapshot(content, finalJSONBudget, __classPrivateFieldGet(this, _ChatCompletionStream_partialJSONParseBudget, "f"));
           }
-          for (const [index, identity] of state3?.tool_call_identities ?? []) {
+          for (const [index, identity] of state2?.tool_call_identities ?? []) {
             const toolCall = toolCalls && captureSnapshotArrayItem(toolCalls, index);
             if (!toolCall) {
               throw new OpenAIError("Chat completion stream contains a changed tool call identity");
@@ -16392,7 +16397,7 @@ var init_agent_session_stream = __esm({
       externalSignal?.addEventListener("abort", abort, { once: true });
       this.controller.signal.addEventListener("abort", abort, { once: true });
       const options = { ...__classPrivateFieldGet(this, _AgentSessionStream_options, "f"), signal: this.controller.signal };
-      const state3 = new TurnState();
+      const state2 = new TurnState();
       try {
         if (externalSignal?.aborted) {
           this.abort(externalSignal.reason);
@@ -16418,11 +16423,11 @@ var init_agent_session_stream = __esm({
         __classPrivateFieldSet(this, _AgentSessionStream_reading, true, "f");
         for await (const event of __classPrivateFieldGet(this, _AgentSessionStream_stream, "f")) {
           __classPrivateFieldGet(this, _AgentSessionStream_instances, "m", _AgentSessionStream_checkAbort).call(this);
-          if (!state3.accept(event)) {
+          if (!state2.accept(event)) {
             continue;
           }
-          const terminal = state3.terminal(event);
-          const dispatch = __classPrivateFieldGet(this, _AgentSessionStream_dispatcher, "f").prepare(state3.call(event), __classPrivateFieldGet(this, _AgentSessionStream_sessionID, "f"));
+          const terminal = state2.terminal(event);
+          const dispatch = __classPrivateFieldGet(this, _AgentSessionStream_dispatcher, "f").prepare(state2.call(event), __classPrivateFieldGet(this, _AgentSessionStream_sessionID, "f"));
           if (terminal) {
             __classPrivateFieldGet(this, _AgentSessionStream_stream, "f").controller.abort();
           }
@@ -16458,13 +16463,13 @@ var init_agent_session_stream = __esm({
 
 // node_modules/openai/lib/beta/agents/agent-session-create-stream.mjs
 async function* dispatchCreationTools(source, dispatcher, signal) {
-  const state3 = new TurnState();
+  const state2 = new TurnState();
   let sessionID;
   for await (const event of { [Symbol.asyncIterator]: source }) {
     if (event.type === "agent.session.created") {
       sessionID ?? (sessionID = event.session.id);
     }
-    const dispatch = state3.accept(event) ? dispatcher.prepare(state3.call(event), sessionID) : void 0;
+    const dispatch = state2.accept(event) ? dispatcher.prepare(state2.call(event), sessionID) : void 0;
     yield event;
     if (signal.aborted) {
       return;
@@ -26914,35 +26919,24 @@ var init_api = __esm({
 
 // orchestration/llm.js
 async function testLLM() {
-  let context = [{ role: "user", content: FIRST_MESSAGE }];
+  let context = [{ role: "user", content: TEST_PROMPT }];
   while (true) {
     const response = await sendMessage(context);
     const calls = response.output.filter(
       (item) => item.type === "function_call"
     );
-    console.log("Model output:", response.output);
-    console.log("Function calls:", calls.length);
     if (calls.length === 0) {
-      console.log("Final answer:", response.output_text);
-      console.log("Recommandation finales stock\xE9es :", getPreviousConclusion());
       return {
         text: response.output_text,
         recommendations: getPreviousConclusion()
       };
     }
     context.push(...toResponseInputItems(response.output));
-    console.log("Entering tool output handling");
-    console.log("Calls:", calls);
-    console.log("Calls count:", calls?.length);
     const results = [];
     for (const call of calls) {
-      console.log("Processing:", call);
       const args = JSON.parse(call.arguments);
-      console.log("Arguments:", args);
       const result = await run(call.name, args);
-      console.log("Run result:", result);
       const output = result?.text;
-      console.log("Output:", output);
       results.push({
         type: "function_call_output",
         call_id: call.call_id,
@@ -26991,24 +26985,21 @@ var require_main = __commonJS({
       await connect();
       console.log("trackers are on");
       const INTERVAL_TIME = 3 * 60 * 1e3;
-      async function runPeriodicAnalysis() {
-        try {
-          console.log("\n--- [D\xE9clenchement p\xE9riodique] Analyse par le LLM ---");
-          const startTime = Date.now();
-          const res = await testLLM();
-          console.log("LLM response : ", res);
-          console.log(`Analyse termin\xE9e en ${(Date.now() - startTime) / 1e3}s`);
-        } catch (error) {
-          console.error("Erreur lors de l'ex\xE9cution p\xE9riodique du LLM :", error);
-        }
-      }
+      const events = await load_events();
+      console.log("events are sorted");
+      const [ids, evts, urls] = await Promise.all([
+        per_id(events),
+        per_event(events),
+        per_url(events)
+      ]);
+      console.log({ ids, evts, urls });
       const sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      console.log(
-        await chrome.storage.local.getBytesInUse(null),
-        "bytes"
-      );
-      await runPeriodicAnalysis();
-      setInterval(runPeriodicAnalysis, INTERVAL_TIME);
+      let res = "failed";
+      while (res == "failed") {
+        await sleep2(2e3);
+        res = await testLLM();
+        console.log("LLM response : ", res);
+      }
     }
     main();
   }

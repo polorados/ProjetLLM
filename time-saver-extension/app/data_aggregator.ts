@@ -178,6 +178,5 @@ export async function per_url(
     if (url) urls.add(url);
   }
 
-  console.log("per url result : ", [...urls]);
   return [...urls];
 }

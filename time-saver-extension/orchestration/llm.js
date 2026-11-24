@@ -14,12 +14,12 @@ export async function testLLM() {
             item => item.type === "function_call"
         );
 
-        console.log("Model output:", response.output);
-        console.log("Function calls:", calls.length);
+        // console.log("Model output:", response.output);
+        // console.log("Function calls:", calls.length);
 
         if (calls.length === 0) {
-            console.log("Final answer:", response.output_text);
-            console.log("Recommandation finales stockées :", getPreviousConclusion());
+            // console.log("Final answer:", response.output_text);
+            // console.log("Recommandation finales stockées :", getPreviousConclusion());
             return {
                 text: response.output_text,
                 recommendations: getPreviousConclusion(),
@@ -28,22 +28,22 @@ export async function testLLM() {
 
         context.push(...toResponseInputItems(response.output));
 
-        console.log("Entering tool output handling");
-        console.log("Calls:", calls);
-        console.log("Calls count:", calls?.length);
+        // console.log("Entering tool output handling");
+        // console.log("Calls:", calls);
+        // console.log("Calls count:", calls?.length);
         const results = [];
 
         for (const call of calls) {
-            console.log("Processing:", call);
+            // console.log("Processing:", call);
 
             const args = JSON.parse(call.arguments);
-            console.log("Arguments:", args);
+            // console.log("Arguments:", args);
 
             const result = await run(call.name, args);
-            console.log("Run result:", result);
+            // console.log("Run result:", result);
 
             const output = result?.text;
-            console.log("Output:", output);
+            // console.log("Output:", output);
 
             results.push({
                 type: "function_call_output",
@@ -56,7 +56,7 @@ export async function testLLM() {
 
         console.log("Final results:", results);
 
-console.log("All tool results:", results);
+    console.log("All tool results:", results);
         context.push(...results);
     }
 }
