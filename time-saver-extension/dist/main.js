@@ -1,4 +1,3 @@
-
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -151,283 +150,78 @@ async function searchCatalog(need) {
   console.log("Result of searchCatalog : ", out);
   return out;
 }
-var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY, NEEDS;
+async function getInstalled2() {
+  const all = await chrome.management.getAll();
+  return {
+    installedExtensions: all.filter((e) => e.type === "extension" && e.id !== chrome.runtime.id).slice(0, 100).map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }))
+  };
+}
+var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY;
 var init_mini_catalog = __esm({
   "app/mini_catalog.ts"() {
     "use strict";
     CATALOG_URL = "https://polorados.github.io/catalogue-extension/catalog.json";
     BUNDLED_PATH = "catalog.bundled.json";
     STORAGE_KEY = "catalog";
-    NEEDS = ["trop_onglets", "aller_retour", "copier_coller", "ouverture_quotidienne", "traduction", "lecture_longue", "raccourcis_clavier"];
   }
 });
 
-// orchestration/mini_prompt.js
-var SYSTEM_PROMPT;
-var init_mini_prompt = __esm({
-  "orchestration/mini_prompt.js"() {
-    SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue.
-
-D\xC9MARCHE
-1. Appelle per_id, per_event et per_url.
-2. D\xE9duis 1 \xE0 3 besoins, uniquement parmi ceux accept\xE9s par search_catalog.
-3. Appelle search_catalog. Appelle get_installed_extensions si tu veux \xE9viter de recommander quelque chose qui fait d\xE9j\xE0 double emploi avec une extension de l'utilisateur.
-4. Si le catalogue couvre mal le besoin et que la recherche web est disponible, fais au plus 2 recherches, puis recommande l'extension \xE0 l'utilisateur si elle semble pertinente.
-5. Termine toujours en appelant submit_recommendations : au plus 3 recommandations, chacune avec l'id du catalogue et une raison courte en fran\xE7ais (une phrase) fond\xE9e sur les donn\xE9es observ\xE9es. S'il n'y a pas de signal clair, renvoie une liste vide : mieux vaut ne rien recommander qu'une recommandation faible.`;
-  }
-});
-
-// future_dev/tools.js
-async function getInstalled() {
-  const all = await chrome.management.getAll();
-  return all.filter((e) => e.type === "extension" && e.id !== chrome.runtime.id).slice(0, 100).map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }));
+// app/history.ts
+function saveConclusion(conclusion, newNotes = "") {
+  previousConclusion = conclusion;
+  notes = newNotes;
 }
-function createToolRunner() {
-  const state2 = { recommendations: null };
-  const impls = {
-    async per_id({ events } = {}) {
-      return await per_id(events);
-    },
-    async per_event({ events } = {}) {
-      return await per_event(events);
-    },
-    async per_url({ events } = {}) {
-      return await per_url(events);
-    },
-    async search_catalog({ needs }) {
-      return await searchCatalog(needs);
-    },
-    async get_installed_extensions() {
-      return await getInstalled();
-    },
-    async submit_recommendations({ recommendations, notes = "" }) {
-      state2.recommendations = recommendations;
-      state2.notes = typeof notes === "string" ? notes.slice(0, 300) : "";
-    }
+function getPreviousConclusion() {
+  return {
+    conclusion: previousConclusion,
+    notes
   };
-  async function run(name, input) {
-    console.log(`\u{1F6E0}\uFE0F [Tool Called] Le LLM appelle l'outil '${name}' avec :`, input);
-    const impl = impls[name];
-    if (!impl) return { text: JSON.stringify({ error: `outil inconnu : ${name}` }), isError: true };
-    try {
-      const out = await impl(input && typeof input === "object" ? input : {});
-      console.log(`\u2705 [Tool Result] Ce que '${name}' renvoie au LLM :`, out);
-      const isError = Boolean(out && typeof out === "object" && out.error);
-      return { text: typeof out === "string" ? out : JSON.stringify(out), isError };
-    } catch (e) {
-      console.error(`\u274C [Tool Error] ${name}:`, e);
-      return { text: JSON.stringify({ error: String(e?.message ?? e) }), isError: true };
-    }
-  }
-  return { run, state: state2 };
 }
-var TOOL_DEFS, WEB_SEARCH, FIRST_MESSAGE;
-var init_tools = __esm({
-  "future_dev/tools.js"() {
+var previousConclusion, notes;
+var init_history = __esm({
+  "app/history.ts"() {
+    "use strict";
+    previousConclusion = null;
+    notes = "";
+  }
+});
+
+// orchestration/function_tools.ts
+var Function_Tools;
+var init_function_tools = __esm({
+  "orchestration/function_tools.ts"() {
+    "use strict";
     init_data_aggregator();
     init_mini_catalog();
-    TOOL_DEFS = [
-      {
-        type: "function",
-        name: "per_id",
-        description: "Agr\xE8ge les \xE9v\xE9nements par identifiant. Si events est omis, utilise tous les \xE9v\xE9nements enregistr\xE9s.",
-        parameters: {
-          type: "object",
-          properties: {
-            events: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  time: { type: "integer" },
-                  name: {
-                    type: "string",
-                    enum: ["created", "activated", "updated", "closed"]
-                  },
-                  id: { type: "integer" },
-                  url: { type: ["string", "null"] },
-                  info: { type: ["object", "null"] }
-                },
-                required: ["time", "name", "id", "url", "info"],
-                additionalProperties: false
-              }
-            }
-          },
-          required: [],
-          additionalProperties: false
-        }
-      },
-      {
-        type: "function",
-        name: "per_event",
-        description: "Agr\xE8ge les \xE9v\xE9nements par \xE9v\xE9nement. Si events est omis, utilise tous les \xE9v\xE9nements enregistr\xE9s.",
-        parameters: {
-          type: "object",
-          properties: {
-            events: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  time: { type: "integer" },
-                  name: {
-                    type: "string",
-                    enum: ["created", "activated", "updated", "closed"]
-                  },
-                  id: { type: "integer" },
-                  url: { type: ["string", "null"] },
-                  info: { type: ["object", "null"] }
-                },
-                required: ["time", "name", "id", "url", "info"],
-                additionalProperties: false
-              }
-            }
-          },
-          required: [],
-          additionalProperties: false
-        }
-      },
-      {
-        type: "function",
-        name: "per_url",
-        description: "Agr\xE8ge les \xE9v\xE9nements par URL. Si events est omis, utilise tous les \xE9v\xE9nements enregistr\xE9s.",
-        parameters: {
-          type: "object",
-          properties: {
-            events: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  time: { type: "integer" },
-                  name: {
-                    type: "string",
-                    enum: ["created", "activated", "updated", "closed"]
-                  },
-                  id: { type: "integer" },
-                  url: { type: ["string", "null"] },
-                  info: { type: ["object", "null"] }
-                },
-                required: ["time", "name", "id", "url", "info"],
-                additionalProperties: false
-              }
-            }
-          },
-          required: [],
-          additionalProperties: false
-        }
-      },
-      {
-        type: "function",
-        name: "search_catalog",
-        strict: false,
-        description: "Cherche des fonctionnalit\xE9s Chromes et extensions recommand\xE9es dans le catalogue, \xE0 partir de besoins. Classement : plus de besoins couverts, entr\xE9es v\xE9rifi\xE9es, fonctionnalit\xE9s natives d'abord.",
-        parameters: {
-          type: "object",
-          properties: {
-            needs: { type: "string", enum: NEEDS }
-          },
-          required: ["needs"],
-          additionalProperties: false
-        }
-      },
-      {
-        type: "function",
-        name: "get_installed_extensions",
-        strict: true,
-        description: "Liste les extensions install\xE9es par l'utilisateur.",
-        parameters: {
-          type: "object",
-          properties: {},
-          additionalProperties: false
-        }
-      },
-      {
-        type: "function",
-        name: "submit_recommendations",
-        description: "Rend le r\xE9sultat final (termine l\u2019analyse). Au plus 3 recommandations, uniquement des entr\xE9es du catalogue.",
-        strict: false,
-        parameters: {
-          type: "object",
-          properties: {
-            recommendations: {
-              type: "array",
-              maxItems: 3,
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string", description: "id d\u2019une entr\xE9e du catalogue" },
-                  reason: { type: "string", description: "une phrase en fran\xE7ais" }
-                },
-                required: ["id", "reason"],
-                additionalProperties: false
-              }
-            },
-            notes: { type: "string", description: "facultatif : par ex. consigne suspecte d\xE9tect\xE9e dans des donn\xE9es" }
-          },
-          required: ["recommendations"],
-          additionalProperties: false
-        }
-      }
-    ];
-    WEB_SEARCH = {
-      type: "web_search",
-      filters: {
-        allowed_domains: [
-          "chromewebstore.google.com",
-          "developer.chrome.com",
-          "support.google.com"
-        ]
-      }
-    };
-    FIRST_MESSAGE = "Hello World";
-  }
-});
-
-// node_modules/openai/lib/responses/ResponseInputItems.mjs
-function toResponseInputItems(items) {
-  const inputItems = [];
-  for (const item of items) {
-    const inputItem = toResponseInputItem(item);
-    if (inputItem) {
-      inputItems.push(inputItem);
-    }
-  }
-  return inputItems;
-}
-function toResponseInputItem(item) {
-  switch (item.type) {
-    case "message": {
-      if (item.role !== "assistant" || !("id" in item) || !Array.isArray(item.content)) {
-        return stripCreatedBy(item);
-      }
-      const content = item.content.map((part) => {
-        if ((part.type === "output_text" || part.type === "refusal") && "parsed" in part) {
-          const { parsed: _parsed, ...inputPart } = part;
-          return inputPart;
-        }
-        return part;
+    init_history();
+    Function_Tools = class {
+      /** Aggregates events by tab ID. */
+      per_id = async (params) => ({
+        result: await per_id(params.events ?? void 0)
       });
-      if (content.every((part, index) => part === item.content[index])) {
-        return stripCreatedBy(item);
+      /** Aggregates events by URL. */
+      per_url(params) {
+        return per_url(params.events ?? void 0).then((result) => ({ result }));
       }
-      return { ...stripCreatedBy(item), content };
-    }
-    case "function_call": {
-      const inputItem = stripCreatedBy(item);
-      if (!("parsed_arguments" in inputItem)) {
-        return inputItem;
-      }
-      const { parsed_arguments: _parsedArguments, ...withoutParsedArguments } = inputItem;
-      return withoutParsedArguments;
-    }
-    case "additional_tools": {
-      if (item.role !== "developer") {
-        return null;
+      /** Aggregates events by event type. */
+      per_event(params) {
+        return per_event(params.events ?? void 0);
       }
       /** Searches the feature catalog. */
       searchCatalog(params) {
-        return { result: searchCatalog(params.need) };
+        return searchCatalog(params.need);
+      }
+      /** get the list of installed extension on the chrome browser */
+      getInstalled() {
+        return getInstalled2();
+      }
+      /** save the conclusion made from events 
+       * (to keep some history) */
+      saveConclusion(params) {
+        saveConclusion(params.conclusion, params.newNote);
+      }
+      getPreviousConclusion() {
+        return getPreviousConclusion();
       }
     };
   }
@@ -804,7 +598,7 @@ async function run(name, input) {
   if (!impl) throw new Error(`Unknown tool: ${name}`);
   return await impl(input ?? {});
 }
-var functionTools, impls, WEB_SEARCH, TEST_PROMPT;
+var functionTools, impls, WEB_SEARCH, FIRST_MESSAGE, SYSTEM_PROMPT;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
@@ -815,7 +609,8 @@ var init_mini_tools = __esm({
       per_id: ({ events } = {}) => functionTools.per_id({ events }),
       per_event: ({ events } = {}) => functionTools.per_event({ events }),
       per_url: ({ events } = {}) => functionTools.per_url({ events }),
-      searchCatalog: ({ need }) => functionTools.searchCatalog({ need })
+      searchCatalog: ({ need }) => functionTools.searchCatalog({ need }),
+      get_installed_extensions: () => functionTools.getInstalled()
     };
     WEB_SEARCH = {
       type: "web_search",
@@ -827,7 +622,15 @@ var init_mini_tools = __esm({
         ]
       }
     };
-    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
+    FIRST_MESSAGE = "Hello World";
+    SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue.
+
+D\xC9MARCHE
+1. Appelle per_id, per_event et per_url, et getPreviousConclusion pour utiliser des conclusion pass\xE9es .
+2. D\xE9duis 1 \xE0 3 besoins, uniquement parmi ceux accept\xE9s par search_catalog.
+3. Appelle search_catalog avec les besoins que tu as trouv\xE9. Appelle get_installed_extensions si tu veux \xE9viter de recommander quelque chose qui fait d\xE9j\xE0 double emploi avec une extension de l'utilisateur.
+4. Si le catalogue couvre mal le besoin et que la recherche web est disponible, fais au plus 2 recherches, puis recommande l'extension \xE0 l'utilisateur si elle semble pertinente.
+5. Termine toujours en appelant saveConclusion : au plus 3 recommandations, et une raison courte en fran\xE7ais (une phrase) fond\xE9e sur les donn\xE9es observ\xE9es. S'il n'y a pas de signal clair, ne pas envoyer de reccomendations et mettre les informations qui ont pu \xEAtre tir\xE9e dans saveConclusion.`;
   }
 });
 
@@ -18592,10 +18395,10 @@ var init_AssistantStream = __esm({
         }));
         return runner;
       }
-      async _createToolAssistantStream(run, runId, params, options) {
+      async _createToolAssistantStream(run2, runId, params, options) {
         this._listenForAbort(options?.signal);
         const body = { ...params, stream: true };
-        const stream = await run.submitToolOutputs(runId, body, {
+        const stream = await run2.submitToolOutputs(runId, body, {
           ...options,
           signal: this.controller.signal
         });
@@ -18680,10 +18483,10 @@ var init_AssistantStream = __esm({
         }
         return this._addRun(__classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
       }
-      async _createAssistantStream(run, threadId, params, options) {
+      async _createAssistantStream(run2, threadId, params, options) {
         this._listenForAbort(options?.signal);
         const body = { ...params, stream: true };
-        const stream = await run.create(threadId, body, { ...options, signal: this.controller.signal });
+        const stream = await run2.create(threadId, body, { ...options, signal: this.controller.signal });
         this._connected();
         for await (const event of stream) {
           __classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
@@ -18700,9 +18503,9 @@ var init_AssistantStream = __esm({
       static accumulateDelta(acc, delta) {
         return accumulateAssistantStreamDelta(acc, delta);
       }
-      _addRun(run) {
-        __classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_emitExposed).call(this, "run", run);
-        return run;
+      _addRun(run2) {
+        __classPrivateFieldGet(this, _AssistantStream_instances, "m", _AssistantStream_emitExposed).call(this, "run", run2);
+        return run2;
       }
       async _threadAssistantStream(params, thread, options) {
         return await this._createThreadAssistantStream(thread, params, options);
@@ -19450,8 +19253,8 @@ var init_threads2 = __esm({
        * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
        */
       async createAndRunPoll(body, options) {
-        const run = await this.createAndRun(body, options);
-        return await this.runs.poll(run.id, { thread_id: run.thread_id }, options);
+        const run2 = await this.createAndRun(body, options);
+        return await this.runs.poll(run2.id, { thread_id: run2.thread_id }, options);
       }
       /**
        * Create a thread and stream the run back
@@ -27063,7 +26866,6 @@ var init_api = __esm({
 
 // orchestration/llm.js
 async function testLLM() {
-  const { run, state: state2 } = createToolRunner();
   let context = [{ role: "user", content: FIRST_MESSAGE }];
   while (true) {
     const response = await sendMessage(context);
@@ -27074,10 +26876,10 @@ async function testLLM() {
     console.log("Function calls:", calls.length);
     if (calls.length === 0) {
       console.log("Final answer:", response.output_text);
-      console.log("Recommandation finales stock\xE9es :", state2.recommendations);
+      console.log("Recommandation finales stock\xE9es :", getPreviousConclusion());
       return {
         text: response.output_text,
-        recommendations: state2.recommendations
+        recommendations: getPreviousConclusion()
       };
     }
     context.push(...toResponseInputItems(response.output));
@@ -27096,22 +26898,23 @@ async function testLLM() {
 async function sendMessage(input) {
   const client2 = getClient();
   return await client2.responses.create({
-    model: "gpt-6-astra",
+    model: "gpt-6-luna",
     instructions: SYSTEM_PROMPT,
     input,
     tools: [
       WEB_SEARCH,
-      ...TOOL_DEFS
+      ...tools_default
     ],
     tool_choice: "auto"
   });
 }
 var init_llm = __esm({
   "orchestration/llm.js"() {
-    init_mini_prompt();
-    init_tools();
+    "use strict";
+    init_mini_tools();
     init_ResponseInputItems();
     init_api();
+    init_history();
   }
 });
 
@@ -27141,6 +26944,11 @@ var require_main = __commonJS({
           console.error("Erreur lors de l'ex\xE9cution p\xE9riodique du LLM :", error);
         }
       }
+      const sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      console.log(
+        await chrome.storage.local.getBytesInUse(null),
+        "bytes"
+      );
       await runPeriodicAnalysis();
       setInterval(runPeriodicAnalysis, INTERVAL_TIME);
     }

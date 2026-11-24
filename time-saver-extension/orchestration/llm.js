@@ -1,10 +1,10 @@
-import { SYSTEM_PROMPT, FIRST_MESSAGE, WEB_SEARCH, TOOL_DEFS } from './mini_tools.js';
+import { SYSTEM_PROMPT, FIRST_MESSAGE, WEB_SEARCH, TOOL_DEFS, run } from './mini_tools.js';
 import { toResponseInputItems } from "openai/lib/responses/ResponseInputItems";
 import { getClient } from './api.js';
+import { getPreviousConclusion } from '../app/history.js';
 
 
 export async function testLLM() {
-    const { run, state } = createToolRunner();
     let context = [{ role: "user", content: FIRST_MESSAGE }];
 
     while (true) {
@@ -19,10 +19,10 @@ export async function testLLM() {
 
         if (calls.length === 0) {
             console.log("Final answer:", response.output_text);
-            console.log("Recommandation finales stockées :", state.conclusion);
+            console.log("Recommandation finales stockées :", getPreviousConclusion());
             return {
                 text: response.output_text,
-                recommendations: state.conclusion,
+                recommendations: getPreviousConclusion(),
             };
         }
 
