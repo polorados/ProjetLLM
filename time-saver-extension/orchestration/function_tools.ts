@@ -1,5 +1,5 @@
 import { per_id, per_url, per_event } from "../app/data_aggregator";
-import { searchCatalog, getInstalled, getCatalog, reshape_recommendations } from "../app/mini_catalog";
+import { searchCatalog, getInstalled, getCatalog, submitRecommendation } from "../app/mini_catalog";
 import type {
     TabEvent,
     Need,
@@ -66,8 +66,8 @@ export class Function_Tools {
         return getCatalog()
     }
 
-    /** reshape the recommendations to submit to the UI  */
-    reshape_recommendations( params: {recommendations: CatalogData} ): ReshapedRecommendations {
-        return reshape_recommendations(params.recommendations);
+    /** reshape the recommendations to submit to the UI */
+    submitRecommendation( params: {recommendations: CatalogData} ): Promise<{success:boolean}> {
+        return submitRecommendation(params.recommendations);
     }
 }

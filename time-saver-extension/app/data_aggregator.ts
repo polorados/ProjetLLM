@@ -106,7 +106,6 @@ export async function per_id(
     });
   }
 
-  console.log("per id result : ", out);
   return out;
 }
 
@@ -146,7 +145,6 @@ export async function per_event(
     out[name].push(time);
   }
 
-  console.log("per event result : ", out);
   return out;
 }
 

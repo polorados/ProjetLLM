@@ -1,7 +1,7 @@
 import { load_events, per_id, per_event, per_url } from "./app/data_aggregator.ts";
 import { save, track_tabs } from "./app/mini_tracker.js";
-import { searchCatalog, syncCatalog, reshape_recommendations } from "./app/mini_catalog.ts"
-import { testLLM } from "./orchestration/llm.js";
+import { searchCatalog, syncCatalog, submitRecommendation } from "./app/mini_catalog.ts"
+import { testLLM, runLLMCycle, runPeriodicAnalysis } from "./orchestration/llm.js";
 import { connect } from "./orchestration/api.js"
 
 
@@ -13,92 +13,61 @@ async function decide(events) {
     if (Object.keys(ids).length >= 0) {
         recommendations = await searchCatalog("trop_onglets");
     }
-    recommendations = await reshape_recommendations(recommendations);
+    recommendations = submitRecommendation(recommendations);
     await chrome.storage.local.set({ recommendations: recommendations });
     return recommendations;
 }
 
-// async function runTests() {
-//     // console.log("--- DÉBUT DU TEST DU TOOL RUNNER ---");
-//     // const { run, state } = createToolRunner();
+async function runTests() {
+    console.log("--- DÉBUT DU TEST DU TOOL RUNNER ---");
+    const { run, state } = createToolRunner();
 
-//     // console.log("Test de search_catalog...");
-//     // const catalogResult = await run('search_catalog', { needs: 'trop_onglets' });
-//     // console.log("Résultat :", catalogResult);
+    console.log("Test de search_catalog...");
+    const catalogResult = await run('search_catalog', { needs: 'trop_onglets' });
+    console.log("Résultat :", catalogResult);
 
-//     // console.log("Test de get_installed_extensions...");
-//     // const installedResult = await run('get_installed_extensions', {});
-//     // console.log("Résultat :", installedResult);
+    console.log("Test de get_installed_extensions...");
+    const installedResult = await run('get_installed_extensions', {});
+    console.log("Résultat :", installedResult);
 
-//     // console.log("Test de submit_recommendations...");
-//     // await run('submit_recommendations', { 
-//     //     recommendations: [{ id: "test_123", reason: "Raison de test" }],
-//     //     notes: "Test réussi"
-//     // });
+    console.log("Test de submit_recommendations...");
+    await run('submit_recommendations', { 
+        recommendations: [{ id: "test_123", reason: "Raison de test" }],
+        notes: "Test réussi"
+    });
     
-//     // console.log("--- ÉTAT FINAL DU RUNNER ---");
-//     // console.log(state);
-// }
+    console.log("--- ÉTAT FINAL DU RUNNER ---");
+    console.log(state);
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const INTERVAL_TIME_MINUTES = 3;
+const TEST_FUNCTIONS = false;
+
 
 async function main() {
     // await chrome.storage.local.clear();
 
     syncCatalog();
-
     track_tabs();
-
     await connect();
 
-    console.log("trackers are on");
-
-    const INTERVAL_TIME = 3 * 60 * 1000;
-
-    // async function runPeriodicAnalysis() {
-    //     try {
-    //         console.log("\n--- [Déclenchement périodique] Analyse par le LLM ---");
-    //         const startTime = Date.now();
-
-    //         const res = await testLLM();
-    //         console.log("LLM response : ", res);
-    //         console.log(`Analyse terminée en ${(Date.now() - startTime) / 1000}s`);
-    //     } catch (error) {
-    //         console.error("Erreur lors de l'exécution périodique du LLM :", error);
-    //     }
-    // }
-    const events = await load_events();
-
-    console.log("events are sorted");
-    const [ids, evts, urls] = await Promise.all([
-        per_id(events),
-        per_event(events),
-        per_url(events),
-    ]);
-
-    console.log({ ids, evts, urls });
-    // const recommendations = await decide(events)
-    // console.log("has decided this : ", recommendations)
-
-    // // await runTests();
-    // const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-    // await runTests();
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    // console.log(
-    //     await chrome.storage.local.getBytesInUse(null),
-    //     "bytes"
-    // );
+    if (TEST_FUNCTIONS) {await runTests();}
 
     // testing
-    let res = "failed";
-    while (res == "failed") {
-        await sleep(2000);
-        res = await testLLM();
-        console.log("LLM response : ", res);
-    }
+    // let res = "failed";
+    // while (res == "failed") {
+    //     await sleep(2000);
+    //     res = await testLLM();
+    //     console.log("LLM response : ", res);
+    // }
 
-    // await runPeriodicAnalysis();
-
-    // setInterval(runPeriodicAnalysis, INTERVAL_TIME);
+    await runPeriodicAnalysis();
+    // every 3 minutes 
+    setInterval(runPeriodicAnalysis, INTERVAL_TIME_MINUTES * 1000 * 60);
 }
 
 main();

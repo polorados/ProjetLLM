@@ -9,10 +9,12 @@ const impls = {
     per_id: ({ events } = {})       => functionTools.per_id({ events }),
     per_event: ({ events } = {})    => functionTools.per_event({ events }),
     per_url: ({ events } = {})      => functionTools.per_url({ events }),
-    searchCatalog: ({ need } = {})       => functionTools.searchCatalog({ need }),
+    searchCatalog: ({ need } = {})  => functionTools.searchCatalog({ need }),
     getInstalled : ()               => functionTools.getInstalled(),
     saveConclusion: ({ conclusion, newNote } = {}) => functionTools.saveConclusion({ conclusion, newNote }),
-    getPreviousConclusion: ()       => functionTools.getPreviousConclusion()
+    getPreviousConclusion: ()       => functionTools.getPreviousConclusion(),
+    submitRecommendation: ({ recommendations})     => functionTools.submitRecommendation({ recommendations }),
+    getCatalog: ()                  => functionTools.getCatalog()
 };
 
 export async function run(name, input) {
@@ -46,3 +48,5 @@ DÉMARCHE
 3. Appelle searchCatalog avec les besoins que tu as trouvé. Appelle getInstalled si tu veux éviter de recommander quelque chose qui fait déjà double emploi avec une extension de l'utilisateur.
 4. Si le catalogue couvre mal le besoin et que la recherche web est disponible, fais au plus 2 recherches, puis recommande l'extension à l'utilisateur si elle semble pertinente.
 5. Termine toujours en appelant saveConclusion`
+
+export const OPTIMIZE_PROMPT = "Tu es une IA qui recommende des extensions, raccourcis et life hack sur google chrome"

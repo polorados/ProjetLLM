@@ -423,7 +423,7 @@
   },
   {
     "type": "function",
-    "name": "reshape_recommendations",
+    "name": "submitRecommendation",
     "description": "reshape the recommendations to submit to the UI",
     "parameters": {
       "type": "object",
@@ -477,7 +477,14 @@
               "type": "string"
             },
             "shortcut": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "last_verified": {
               "anyOf": [
@@ -497,6 +504,7 @@
             "summary",
             "needs",
             "url",
+            "shortcut",
             "last_verified"
           ],
           "additionalProperties": false

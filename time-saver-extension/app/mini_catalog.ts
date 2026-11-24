@@ -52,12 +52,23 @@ export async function getInstalled(): Promise<InstalledExtensionList> {
   return out;
 }
 
-export function reshape_recommendations(
-    recommendations: CatalogData
-): ReshapedRecommendations {
-    return {recommendations: recommendations.entries.map(
-        ({ id, name, needs, summary, url, shortcut }) => ({
-            id, name, needs, summary, url, shortcut
-        })
-    )};
+
+export async function submitRecommendation(
+    submission: CatalogData
+): Promise<{ success: boolean }> {
+    const recommendations = {
+        recommendations: submission.entries.map(
+            ({ id, name, needs, summary, url, shortcut }) => ({
+                id,
+                name,
+                needs,
+                summary,
+                url,
+                ...(shortcut !== null && { shortcut })
+            })
+        )
+    };
+    console.log("envoi de recommendation !!!")
+    await chrome.storage.local.set({ recommendations: recommendations });
+    return { success: true };
 }

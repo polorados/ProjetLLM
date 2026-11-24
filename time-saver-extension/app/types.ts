@@ -39,7 +39,7 @@ export interface CatalogEntry {
     summary: string;
     needs: Need[];
     url: string;
-    shortcut?: string;
+    shortcut: string | null;
     last_verified: string | null;
 }
 export interface CatalogData {

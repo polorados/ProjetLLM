@@ -80,7 +80,6 @@ async function per_id(events) {
       name: event.name
     });
   }
-  console.log("per id result : ", out);
   return out;
 }
 async function per_event(events) {
@@ -94,7 +93,6 @@ async function per_event(events) {
   for (const { time, name } of events) {
     out[name].push(time);
   }
-  console.log("per event result : ", out);
   return out;
 }
 async function per_url(events) {
@@ -103,7 +101,6 @@ async function per_url(events) {
   for (const { url } of events) {
     if (url) urls.add(url);
   }
-  console.log("per url result : ", [...urls]);
   return [...urls];
 }
 var init_data_aggregator = __esm({
@@ -142,12 +139,16 @@ async function syncCatalog() {
 async function getCatalog() {
   const stored = (await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY];
   if (stored) return stored;
-  return fetch(chrome.runtime.getURL(BUNDLED_PATH)).then((r) => r.json());
+  const response = await fetch(chrome.runtime.getURL(BUNDLED_PATH));
+  return await response.json();
 }
 async function searchCatalog(need) {
   const catalog = await getCatalog();
-  const out = catalog.entries.filter((e) => e.needs.includes(need));
-  return out;
+  return {
+    entries: catalog.entries.filter(
+      (entry) => entry.needs.includes(need)
+    )
+  };
 }
 async function getInstalled() {
   const all = await chrome.management.getAll();
@@ -155,6 +156,23 @@ async function getInstalled() {
     installedExtensions: all.filter((e) => e.type === "extension" && e.id !== chrome.runtime.id).slice(0, 100).map((e) => ({ id: e.id, name: String(e.name).slice(0, 80), enabled: e.enabled }))
   };
   return out;
+}
+async function submitRecommendation(submission) {
+  const recommendations = {
+    recommendations: submission.entries.map(
+      ({ id, name, needs, summary, url, shortcut }) => ({
+        id,
+        name,
+        needs,
+        summary,
+        url,
+        ...shortcut !== null && { shortcut }
+      })
+    )
+  };
+  console.log("envoi de recommendation !!!");
+  await chrome.storage.local.set({ recommendations });
+  return { success: true };
 }
 var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY;
 var init_mini_catalog = __esm({
@@ -167,23 +185,26 @@ var init_mini_catalog = __esm({
 });
 
 // app/history.ts
-function saveConclusion(conclusion, newNotes = "") {
-  previousConclusion = conclusion;
-  notes = newNotes;
+function saveConclusion(events, recommendations, others) {
+  notes_events = events;
+  notes_recommendations = recommendations;
+  notes_other = others;
+  console.log("Events:", events);
+  console.log("Recommendations:", recommendations);
+  console.log("Others:", others);
   return { success: true };
 }
 function getPreviousConclusion() {
   return {
-    conclusion: previousConclusion,
-    notes
+    events: notes_events,
+    recommendations: notes_recommendations,
+    others: notes_other
   };
 }
-var previousConclusion, notes;
+var notes_events, notes_recommendations, notes_other;
 var init_history = __esm({
   "app/history.ts"() {
     "use strict";
-    previousConclusion = null;
-    notes = "";
   }
 });
 
@@ -219,11 +240,19 @@ var init_function_tools = __esm({
       /** save the conclusion made from events 
        * (to keep some history) */
       saveConclusion(params) {
-        return saveConclusion(params.conclusion, params.newNote);
+        return saveConclusion(params.events, params.recommendations, params.others);
       }
       /** get the previous conclusion drawn during the previous reflexion */
       getPreviousConclusion() {
         return getPreviousConclusion();
+      }
+      /** get the full catalog list */
+      getCatalog() {
+        return getCatalog();
+      }
+      /** reshape the recommendations to submit to the UI */
+      submitRecommendation(params) {
+        return submitRecommendation(params.recommendations);
       }
     };
   }
@@ -610,16 +639,20 @@ var init_tools = __esm({
         parameters: {
           type: "object",
           properties: {
-            conclusion: {
+            events: {
               type: "string"
             },
-            newNote: {
+            recommendations: {
+              type: "string"
+            },
+            others: {
               type: "string"
             }
           },
           required: [
-            "conclusion",
-            "newNote"
+            "events",
+            "recommendations",
+            "others"
           ],
           additionalProperties: false,
           $defs: {}
@@ -638,6 +671,130 @@ var init_tools = __esm({
           $defs: {}
         },
         strict: true
+      },
+      {
+        type: "function",
+        name: "getCatalog",
+        description: "get the full catalog list",
+        parameters: {
+          type: "object",
+          properties: {},
+          required: [],
+          additionalProperties: false,
+          $defs: {}
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "submitRecommendation",
+        description: "reshape the recommendations to submit to the UI",
+        parameters: {
+          type: "object",
+          properties: {
+            recommendations: {
+              $ref: "#/$defs/CatalogData"
+            }
+          },
+          required: [
+            "recommendations"
+          ],
+          additionalProperties: false,
+          $defs: {
+            CatalogData: {
+              type: "object",
+              properties: {
+                entries: {
+                  type: "array",
+                  items: {
+                    $ref: "#/$defs/CatalogEntry"
+                  }
+                }
+              },
+              required: [
+                "entries"
+              ],
+              additionalProperties: false
+            },
+            CatalogEntry: {
+              type: "object",
+              properties: {
+                id: {
+                  type: "string"
+                },
+                type: {
+                  $ref: "#/$defs/CatalogEntryType"
+                },
+                name: {
+                  type: "string"
+                },
+                summary: {
+                  type: "string"
+                },
+                needs: {
+                  type: "array",
+                  items: {
+                    $ref: "#/$defs/Need"
+                  }
+                },
+                url: {
+                  type: "string"
+                },
+                shortcut: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "string"
+                    }
+                  ]
+                },
+                last_verified: {
+                  anyOf: [
+                    {
+                      type: "null"
+                    },
+                    {
+                      type: "string"
+                    }
+                  ]
+                }
+              },
+              required: [
+                "id",
+                "type",
+                "name",
+                "summary",
+                "needs",
+                "url",
+                "shortcut",
+                "last_verified"
+              ],
+              additionalProperties: false
+            },
+            CatalogEntryType: {
+              type: "string",
+              enum: [
+                "chrome_feature",
+                "extension"
+              ]
+            },
+            Need: {
+              type: "string",
+              enum: [
+                "aller_retour",
+                "copier_coller",
+                "lecture_longue",
+                "ouverture_quotidienne",
+                "raccourcis_clavier",
+                "traduction",
+                "trop_onglets"
+              ]
+            }
+          }
+        },
+        strict: true
       }
     ];
   }
@@ -649,7 +806,7 @@ async function run(name, input) {
   if (!impl) throw new Error(`Unknown tool: ${name}`);
   return await impl(input ?? {});
 }
-var functionTools, impls, WEB_SEARCH, TEST_PROMPT, SYSTEM_PROMPT;
+var functionTools, impls, WEB_SEARCH, TEST_PROMPT, SYSTEM_PROMPT, OPTIMIZE_PROMPT;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
@@ -663,7 +820,9 @@ var init_mini_tools = __esm({
       searchCatalog: ({ need } = {}) => functionTools.searchCatalog({ need }),
       getInstalled: () => functionTools.getInstalled(),
       saveConclusion: ({ conclusion, newNote } = {}) => functionTools.saveConclusion({ conclusion, newNote }),
-      getPreviousConclusion: () => functionTools.getPreviousConclusion()
+      getPreviousConclusion: () => functionTools.getPreviousConclusion(),
+      submitRecommendation: ({ recommendations }) => functionTools.submitRecommendation({ recommendations }),
+      getCatalog: () => functionTools.getCatalog()
     };
     WEB_SEARCH = {
       type: "web_search",
@@ -684,6 +843,7 @@ D\xC9MARCHE
 3. Appelle searchCatalog avec les besoins que tu as trouv\xE9. Appelle getInstalled si tu veux \xE9viter de recommander quelque chose qui fait d\xE9j\xE0 double emploi avec une extension de l'utilisateur.
 4. Si le catalogue couvre mal le besoin et que la recherche web est disponible, fais au plus 2 recherches, puis recommande l'extension \xE0 l'utilisateur si elle semble pertinente.
 5. Termine toujours en appelant saveConclusion`;
+    OPTIMIZE_PROMPT = "Tu es une IA qui recommende des extensions, raccourcis et life hack sur google chrome";
   }
 });
 
@@ -26919,7 +27079,24 @@ var init_api = __esm({
 
 // orchestration/llm.js
 async function testLLM() {
-  let context = [{ role: "user", content: TEST_PROMPT }];
+  return await runLLMCycle(TEST_PROMPT);
+}
+async function applyTools(calls) {
+  let results = [];
+  for (const call of calls) {
+    const args = JSON.parse(call.arguments);
+    const result = await run(call.name, args);
+    const output = result?.text;
+    results.push({
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: typeof output === "string" ? output : JSON.stringify(result)
+    });
+  }
+  return results;
+}
+async function runLLMCycle(prompt) {
+  let context = [{ role: "user", content: prompt }];
   while (true) {
     const response = await sendMessage(context);
     const calls = response.output.filter(
@@ -26931,20 +27108,8 @@ async function testLLM() {
         recommendations: getPreviousConclusion()
       };
     }
+    const results = await applyTools(calls);
     context.push(...toResponseInputItems(response.output));
-    const results = [];
-    for (const call of calls) {
-      const args = JSON.parse(call.arguments);
-      const result = await run(call.name, args);
-      const output = result?.text;
-      results.push({
-        type: "function_call_output",
-        call_id: call.call_id,
-        output: typeof output === "string" ? output : JSON.stringify(result)
-      });
-    }
-    console.log("Final results:", results);
-    console.log("All tool results:", results);
     context.push(...results);
   }
 }
@@ -26960,6 +27125,13 @@ async function sendMessage(input) {
     ],
     tool_choice: "auto"
   });
+}
+async function runPeriodicAnalysis() {
+  console.log("\n--- [D\xE9clenchement p\xE9riodique] Analyse par le LLM ---");
+  const startTime = Date.now();
+  const res = await runLLMCycle(OPTIMIZE_PROMPT);
+  console.log(`Analyse termin\xE9e en ${(Date.now() - startTime) / 1e3}s`);
+  console.log("LLM response : ", res);
 }
 var init_llm = __esm({
   "orchestration/llm.js"() {
@@ -26979,27 +27151,43 @@ var require_main = __commonJS({
     init_mini_catalog();
     init_llm();
     init_api();
+    async function runTests() {
+      console.log("--- D\xC9BUT DU TEST DU TOOL RUNNER ---");
+      const { run: run2, state: state2 } = createToolRunner();
+      console.log("Test de search_catalog...");
+      const catalogResult = await run2("search_catalog", { needs: "trop_onglets" });
+      console.log("R\xE9sultat :", catalogResult);
+      console.log("Test de get_installed_extensions...");
+      const installedResult = await run2("get_installed_extensions", {});
+      console.log("R\xE9sultat :", installedResult);
+      console.log("Test de submit_recommendations...");
+      await run2("submit_recommendations", {
+        recommendations: [{ id: "test_123", reason: "Raison de test" }],
+        notes: "Test r\xE9ussi"
+      });
+      console.log("--- \xC9TAT FINAL DU RUNNER ---");
+      console.log(state2);
+    }
+    function sleep2(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+    var INTERVAL_TIME_MINUTES = 3;
+    var TEST_FUNCTIONS = false;
     async function main() {
       syncCatalog();
       track_tabs();
       await connect();
-      console.log("trackers are on");
-      const INTERVAL_TIME = 3 * 60 * 1e3;
-      const events = await load_events();
-      console.log("events are sorted");
-      const [ids, evts, urls] = await Promise.all([
-        per_id(events),
-        per_event(events),
-        per_url(events)
-      ]);
-      console.log({ ids, evts, urls });
-      const sleep2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      if (TEST_FUNCTIONS) {
+        await runTests();
+      }
       let res = "failed";
       while (res == "failed") {
         await sleep2(2e3);
         res = await testLLM();
         console.log("LLM response : ", res);
       }
+      await runPeriodicAnalysis();
+      setInterval(runPeriodicAnalysis, INTERVAL_TIME_MINUTES * 1e3 * 60);
     }
     main();
   }

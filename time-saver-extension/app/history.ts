@@ -6,6 +6,10 @@ export function saveConclusion(events: string, recommendations:string, others:st
     notes_events = events;
     notes_recommendations = recommendations;
     notes_other = others;
+
+    console.log("Events:", events) 
+    console.log("Recommendations:", recommendations)
+    console.log("Others:", others)
     return { success : true }
 }
 
