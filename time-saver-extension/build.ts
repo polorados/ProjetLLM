@@ -11,8 +11,8 @@ async function main() {
     format: "esm",
     platform: "browser",
     target: "chrome120",
-    plugins: [ttsc()],
-    external: ["@ttsc/linux-x64"],
+    // plugins: [ttsc()],
+    // external: ["@ttsc/linux-x64"],
   });
 }
 main().catch(console.error);
