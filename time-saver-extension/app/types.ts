@@ -75,3 +75,20 @@ export interface Conclusion {
   recommendations:string | null,
   others: string | null
 }
+
+// ---------------- PRETTY RECOMMENDATIONS
+export interface UIRecommendation {
+  behaviourPhrase: string,
+  needPhrase: string,
+  recommendationPhrases: {phrase: string, details: string},
+  urlForHelp: string
+}
+export interface UIRecommendationList {
+  uirecommendations: UIRecommendation[]
+}
+
+// ---------------- SUCCESS
+export interface Success {
+  success: boolean,
+  details: string | null,
+}

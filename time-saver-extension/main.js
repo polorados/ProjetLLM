@@ -46,6 +46,7 @@ function sleep(ms) {
 
 const INTERVAL_TIME_MINUTES = 3;
 const TEST_FUNCTIONS = false;
+const TEST_TOOLS = true;
 
 
 async function main() {
@@ -56,6 +57,11 @@ async function main() {
     await connect();
 
     if (TEST_FUNCTIONS) {await runTests();}
+    if (TEST_TOOLS) {
+        console.log("-------Testing all the tools-------")
+        const out = await testLLM();
+        console.log("--------", out.text, "---------");
+    }
 
     // testing
     // let res = "failed";

@@ -1,4 +1,4 @@
-import type { Need, CatalogEntry, InstalledExtension, CatalogData, InstalledExtensionList, ReshapedRecommendations } from "./types";
+import type { Need, CatalogEntry, InstalledExtension, CatalogData, InstalledExtensionList, ReshapedRecommendations, UIRecommendationList, Success } from "./types";
 
 // catalog.js: sync a remote catalog and look up recommendations for ONE need.
 export const CATALOG_URL = 'https://polorados.github.io/catalogue-extension/catalog.json';
@@ -55,7 +55,7 @@ export async function getInstalled(): Promise<InstalledExtensionList> {
 
 export async function submitRecommendation(
     submission: CatalogData
-): Promise<{ success: boolean }> {
+): Promise<Success> {
     const recommendations = {
         recommendations: submission.entries.map(
             ({ id, name, needs, summary, url, shortcut }) => ({
@@ -68,7 +68,13 @@ export async function submitRecommendation(
             })
         )
     };
-    console.log("envoi de recommendation !!!")
     await chrome.storage.local.set({ recommendations: recommendations });
-    return { success: true };
+    return { success: true, details: JSON.stringify(recommendations) };
+}
+
+export async function sendPrettyRecommendation(
+  uirecommendationlist:UIRecommendationList
+) {
+  await chrome.storage.local.set({ UIRecommendationList : uirecommendationlist })
+  return { success:true, details: JSON.stringify(uirecommendationlist) }
 }
