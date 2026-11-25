@@ -47,9 +47,10 @@ function isRecord(value) {
 function isEventName(value) {
   return ["created", "activated", "updated", "closed"].includes(value);
 }
-async function load_events() {
+async function loadTabEvents() {
   const all = await chrome.storage.local.get(null);
-  const events = [];
+  const keys = [];
+  events = [];
   for (const [key, record] of Object.entries(all)) {
     const match = key.match(/^event-tab-(\d+)-[a-f0-9]{4}$/i);
     if (!match || !isRecord(record)) continue;
@@ -68,11 +69,13 @@ async function load_events() {
         status: typeof rawInfo.status === "number" ? rawInfo.status : null
       }
     });
+    keys.push(key);
   }
+  await chrome.storage.local.remove(keys);
   return events.sort((a, b) => a.time - b.time);
 }
-async function per_id(events) {
-  events ??= await load_events();
+async function per_id() {
+  await loadTabEvents();
   const out = {};
   for (const event of events) {
     (out[event.id] ??= []).push({
@@ -82,8 +85,8 @@ async function per_id(events) {
   }
   return out;
 }
-async function per_event(events) {
-  events ??= await load_events();
+async function per_event() {
+  await loadTabEvents();
   const out = {
     created: [],
     activated: [],
@@ -95,17 +98,19 @@ async function per_event(events) {
   }
   return out;
 }
-async function per_url(events) {
-  events ??= await load_events();
+async function per_url() {
+  await loadTabEvents();
   const urls = /* @__PURE__ */ new Set();
   for (const { url } of events) {
     if (url) urls.add(url);
   }
   return [...urls];
 }
+var events;
 var init_data_aggregator = __esm({
   "app/data_aggregator.ts"() {
     "use strict";
+    events = [];
   }
 });
 
@@ -188,20 +193,18 @@ var init_mini_catalog = __esm({
 });
 
 // app/history.ts
-function saveConclusion(events, recommendations, others) {
-  notes_events = events;
-  notes_recommendations = recommendations;
-  notes_other = others;
-  return { success: true, details: JSON.stringify({ events, recommendations, others }) };
+async function saveConclusion(events2, recommendations, others) {
+  chrome.storage.local.set({ history: { events: events2, recommendations, others } });
+  return { success: true, details: JSON.stringify({ events: events2, recommendations, others }) };
 }
-function getPreviousConclusion() {
-  return {
-    events: notes_events,
-    recommendations: notes_recommendations,
-    others: notes_other
+async function getPreviousConclusion() {
+  const { history } = await chrome.storage.local.get("history");
+  return history ?? {
+    events: "",
+    recommendations: "",
+    others: ""
   };
 }
-var notes_events, notes_recommendations, notes_other;
 var init_history = __esm({
   "app/history.ts"() {
     "use strict";
@@ -218,47 +221,49 @@ var init_function_tools = __esm({
     init_history();
     Function_Tools = class {
       /** Aggregates events by tab ID. */
-      per_id = async (params) => ({
-        result: await per_id(params.events ?? void 0)
+      per_id = async () => ({
+        result: await per_id()
       });
       /** Aggregates events by URL. */
-      per_url(params) {
-        return per_url(params.events ?? void 0).then((result) => ({ result }));
-      }
+      per_url = async () => ({
+        result: await per_url()
+      });
       /** Aggregates events by event type. */
-      per_event(params) {
-        return per_event(params.events ?? void 0);
-      }
+      per_event = async () => ({
+        result: await per_event()
+      });
       /** Searches the feature catalog. */
-      searchCatalog(params) {
-        return searchCatalog(params.need);
-      }
-      /** get the list of installed extension on the chrome browser */
-      getInstalled() {
-        return getInstalled();
-      }
-      /** save the conclusion made from events 
-       * (to keep some history) */
-      saveConclusion(params) {
-        return saveConclusion(params.events, params.recommendations, params.others);
-      }
-      /** get the previous conclusion drawn during the previous reflexion */
-      getPreviousConclusion() {
-        return getPreviousConclusion();
-      }
-      /** get the full catalog list */
-      getCatalog() {
-        return getCatalog();
-      }
-      /** reshape the recommendations to submit to the backend logic */
-      submitRecommendation(params) {
-        return submitRecommendation(params.recommendations);
-      }
-      /** send the data in a convienent way for UI. all fields are strings for AI to make 
-       * SHORT sentences to display on screen as recommendations to the user */
-      sendPrettyRecommendation(params) {
-        return sendPrettyRecommendation(params.uirecommendationlist);
-      }
+      searchCatalog = async (params) => ({
+        result: await searchCatalog(params.need)
+      });
+      /** Gets installed Chrome extensions. */
+      getInstalled = async () => ({
+        result: await getInstalled()
+      });
+      /** Gets the full catalog. */
+      getCatalog = async () => ({
+        result: await getCatalog()
+      });
+      /** Saves the conclusion drawn from events. */
+      saveConclusion = async (params) => ({
+        result: await saveConclusion(
+          params.events,
+          params.recommendations,
+          params.others
+        )
+      });
+      /** Gets the previous conclusion. */
+      getPreviousConclusion = async () => ({
+        result: await getPreviousConclusion()
+      });
+      /** Submits recommendations to the backend logic. */
+      submitRecommendation = async (params) => ({
+        result: await submitRecommendation(params.recommendations)
+      });
+      /** Sends recommendations formatted for the UI. */
+      sendPrettyRecommendation = async (params) => ({
+        result: await sendPrettyRecommendation(params.uirecommendationlist)
+      });
     };
   }
 });
@@ -274,105 +279,10 @@ var init_tools = __esm({
         description: "Aggregates events by tab ID.",
         parameters: {
           type: "object",
-          properties: {
-            events: {
-              anyOf: [
-                {
-                  type: "null"
-                },
-                {
-                  type: "array",
-                  items: {
-                    $ref: "#/$defs/TabEvent"
-                  }
-                }
-              ]
-            }
-          },
-          required: [
-            "events"
-          ],
+          properties: {},
+          required: [],
           additionalProperties: false,
-          $defs: {
-            EventName: {
-              type: "string",
-              enum: [
-                "activated",
-                "closed",
-                "created",
-                "updated"
-              ]
-            },
-            TabEvent: {
-              type: "object",
-              properties: {
-                time: {
-                  type: "number"
-                },
-                name: {
-                  $ref: "#/$defs/EventName"
-                },
-                id: {
-                  type: "number"
-                },
-                url: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "string"
-                    }
-                  ]
-                },
-                info: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "object",
-                      properties: {
-                        title: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "string"
-                            }
-                          ]
-                        },
-                        status: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "number"
-                            }
-                          ]
-                        }
-                      },
-                      required: [
-                        "title",
-                        "status"
-                      ],
-                      additionalProperties: false
-                    }
-                  ]
-                }
-              },
-              required: [
-                "time",
-                "name",
-                "id",
-                "url",
-                "info"
-              ],
-              additionalProperties: false
-            }
-          }
+          $defs: {}
         },
         strict: true
       },
@@ -382,105 +292,10 @@ var init_tools = __esm({
         description: "Aggregates events by URL.",
         parameters: {
           type: "object",
-          properties: {
-            events: {
-              anyOf: [
-                {
-                  type: "null"
-                },
-                {
-                  type: "array",
-                  items: {
-                    $ref: "#/$defs/TabEvent"
-                  }
-                }
-              ]
-            }
-          },
-          required: [
-            "events"
-          ],
+          properties: {},
+          required: [],
           additionalProperties: false,
-          $defs: {
-            EventName: {
-              type: "string",
-              enum: [
-                "activated",
-                "closed",
-                "created",
-                "updated"
-              ]
-            },
-            TabEvent: {
-              type: "object",
-              properties: {
-                time: {
-                  type: "number"
-                },
-                name: {
-                  $ref: "#/$defs/EventName"
-                },
-                id: {
-                  type: "number"
-                },
-                url: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "string"
-                    }
-                  ]
-                },
-                info: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "object",
-                      properties: {
-                        title: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "string"
-                            }
-                          ]
-                        },
-                        status: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "number"
-                            }
-                          ]
-                        }
-                      },
-                      required: [
-                        "title",
-                        "status"
-                      ],
-                      additionalProperties: false
-                    }
-                  ]
-                }
-              },
-              required: [
-                "time",
-                "name",
-                "id",
-                "url",
-                "info"
-              ],
-              additionalProperties: false
-            }
-          }
+          $defs: {}
         },
         strict: true
       },
@@ -490,105 +305,10 @@ var init_tools = __esm({
         description: "Aggregates events by event type.",
         parameters: {
           type: "object",
-          properties: {
-            events: {
-              anyOf: [
-                {
-                  type: "null"
-                },
-                {
-                  type: "array",
-                  items: {
-                    $ref: "#/$defs/TabEvent"
-                  }
-                }
-              ]
-            }
-          },
-          required: [
-            "events"
-          ],
+          properties: {},
+          required: [],
           additionalProperties: false,
-          $defs: {
-            EventName: {
-              type: "string",
-              enum: [
-                "activated",
-                "closed",
-                "created",
-                "updated"
-              ]
-            },
-            TabEvent: {
-              type: "object",
-              properties: {
-                time: {
-                  type: "number"
-                },
-                name: {
-                  $ref: "#/$defs/EventName"
-                },
-                id: {
-                  type: "number"
-                },
-                url: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "string"
-                    }
-                  ]
-                },
-                info: {
-                  anyOf: [
-                    {
-                      type: "null"
-                    },
-                    {
-                      type: "object",
-                      properties: {
-                        title: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "string"
-                            }
-                          ]
-                        },
-                        status: {
-                          anyOf: [
-                            {
-                              type: "null"
-                            },
-                            {
-                              type: "number"
-                            }
-                          ]
-                        }
-                      },
-                      required: [
-                        "title",
-                        "status"
-                      ],
-                      additionalProperties: false
-                    }
-                  ]
-                }
-              },
-              required: [
-                "time",
-                "name",
-                "id",
-                "url",
-                "info"
-              ],
-              additionalProperties: false
-            }
-          }
+          $defs: {}
         },
         strict: true
       },
@@ -627,7 +347,20 @@ var init_tools = __esm({
       {
         type: "function",
         name: "getInstalled",
-        description: "get the list of installed extension on the chrome browser",
+        description: "Gets installed Chrome extensions.",
+        parameters: {
+          type: "object",
+          properties: {},
+          required: [],
+          additionalProperties: false,
+          $defs: {}
+        },
+        strict: true
+      },
+      {
+        type: "function",
+        name: "getCatalog",
+        description: "Gets the full catalog.",
         parameters: {
           type: "object",
           properties: {},
@@ -640,7 +373,7 @@ var init_tools = __esm({
       {
         type: "function",
         name: "saveConclusion",
-        description: "save the conclusion made from events\n(to keep some history)",
+        description: "Saves the conclusion drawn from events.",
         parameters: {
           type: "object",
           properties: {
@@ -667,20 +400,7 @@ var init_tools = __esm({
       {
         type: "function",
         name: "getPreviousConclusion",
-        description: "get the previous conclusion drawn during the previous reflexion",
-        parameters: {
-          type: "object",
-          properties: {},
-          required: [],
-          additionalProperties: false,
-          $defs: {}
-        },
-        strict: true
-      },
-      {
-        type: "function",
-        name: "getCatalog",
-        description: "get the full catalog list",
+        description: "Gets the previous conclusion.",
         parameters: {
           type: "object",
           properties: {},
@@ -693,7 +413,7 @@ var init_tools = __esm({
       {
         type: "function",
         name: "submitRecommendation",
-        description: "reshape the recommendations to submit to the backend logic",
+        description: "Submits recommendations to the backend logic.",
         parameters: {
           type: "object",
           properties: {
@@ -804,7 +524,7 @@ var init_tools = __esm({
       {
         type: "function",
         name: "sendPrettyRecommendation",
-        description: "send the data in a convienent way for UI. all fields are strings for AI\u202Fto make\nSHORT\u202Fsentences to display on screen as recommendations to the user",
+        description: "Sends recommendations formatted for the UI.",
         parameters: {
           type: "object",
           properties: {
@@ -887,24 +607,24 @@ var functionTools, impls, WEB_SEARCH, TEST_PROMPT, SYSTEM_PROMPT, OPTIMIZE_PROMP
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
-    init_mini_catalog();
     init_function_tools();
     init_tools();
     functionTools = new Function_Tools();
     impls = {
       // events gathering
-      per_id: ({ events } = {}) => functionTools.per_id({ events }),
-      per_event: ({ events } = {}) => functionTools.per_event({ events }),
-      per_url: ({ events } = {}) => functionTools.per_url({ events }),
+      per_id: async () => await functionTools.per_id(),
+      per_event: async () => await functionTools.per_event(),
+      per_url: async () => await functionTools.per_url(),
       // recommendation selection
-      searchCatalog: ({ need } = {}) => functionTools.searchCatalog({ need }),
-      getInstalled: () => functionTools.getInstalled(),
-      getPreviousConclusion: () => functionTools.getPreviousConclusion(),
-      getCatalog: () => functionTools.getCatalog(),
+      searchCatalog: async ({ need } = {}) => await functionTools.searchCatalog({ need }),
+      getInstalled: async () => await functionTools.getInstalled(),
+      getCatalog: async () => await functionTools.getCatalog(),
+      // history management
+      saveConclusion: async ({ events: events2, recommendations, others } = {}) => await functionTools.saveConclusion({ events: events2, recommendations, others }),
+      getPreviousConclusion: async () => await functionTools.getPreviousConclusion(),
       // output to backend or UI
-      saveConclusion: ({ events, recommendations, others } = {}) => functionTools.saveConclusion({ events, recommendations, others }),
-      submitRecommendation: ({ recommendations } = {}) => functionTools.submitRecommendation({ recommendations }),
-      sendPrettyRecommendation: ({ uirecommendationlist } = {}) => functionTools.sendPrettyRecommendation({ uirecommendationlist })
+      submitRecommendation: async ({ recommendations } = {}) => await functionTools.submitRecommendation({ recommendations }),
+      sendPrettyRecommendation: async ({ uirecommendationlist } = {}) => await functionTools.sendPrettyRecommendation({ uirecommendationlist })
     };
     WEB_SEARCH = {
       type: "web_search",
@@ -916,8 +636,8 @@ var init_mini_tools = __esm({
         ]
       }
     };
-    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
-    SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue.
+    TEST_PROMPT = "Test all the tools available and give feedback on wether they worked or not. POINT OUT MISTAKES";
+    SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue ou sur internet.
 
 D\xC9MARCHE
 1. Appelle per_id, per_event et per_url avec events: null, et getPreviousConclusion pour utiliser des conclusions pass\xE9es dans ton raisonnement.
@@ -23313,10 +23033,10 @@ var init_ResponseStream = __esm({
           let responseBody = null;
           let request = client2.responses.create(body, { ...options, signal: this.controller.signal });
           if (request instanceof APIPromise) {
-            request = request._thenUnwrap((events, props) => {
+            request = request._thenUnwrap((events2, props) => {
               prepared = props.options;
               responseBody = props.response.body;
-              return events;
+              return events2;
             });
           }
           stream = await request;

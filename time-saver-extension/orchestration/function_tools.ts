@@ -16,66 +16,62 @@ import type {
 import { saveConclusion, getPreviousConclusion } from "./../app/history.ts"
 
 export class Function_Tools {
-    /** Aggregates events by tab ID. */
-    per_id = async (
-        params: { events: TabEvent[] | null }
-    ): Promise<{ result: PerIdResult }> => ({
-        result: await per_id(params.events ?? undefined)
+     /** Aggregates events by tab ID. */
+    per_id = async (): Promise<{ result: PerIdResult }> => ({
+        result: await per_id()
+    });
+    /** Aggregates events by URL. */
+    per_url = async (): Promise<{ result: PerUrlResult }> => ({
+        result: await per_url()
+    });
+    /** Aggregates events by event type. */
+    per_event = async (): Promise<{ result: PerEventResult }> => ({
+        result: await per_event()
     });
 
-    /** Aggregates events by URL. */
-    per_url(
-        params: { events: TabEvent[] | null }
-    ): Promise<{ result: PerUrlResult }> {
-        return per_url(params.events ?? undefined)
-            .then(result => ({ result }));
-    }
-
-    /** Aggregates events by event type. */
-    per_event(
-        params: { events: TabEvent[] | null }
-    ): Promise<PerEventResult> {
-        return per_event(params.events ?? undefined);
-    }
 
     /** Searches the feature catalog. */
-    searchCatalog(
+    searchCatalog = async (
         params: { need: Need }
-    ): Promise<CatalogData> {
-        return searchCatalog(params.need)
-    }
+    ): Promise<{ result: CatalogData }> => ({
+        result: await searchCatalog(params.need)
+    });
+    /** Gets installed Chrome extensions. */
+    getInstalled = async (): Promise<{ result: InstalledExtensionList }> => ({
+        result: await getInstalled()
+    });
+    /** Gets the full catalog. */
+    getCatalog = async (): Promise<{ result: CatalogData }> => ({
+        result: await getCatalog()
+    });
 
-    /** get the list of installed extension on the chrome browser */
-    getInstalled(): Promise<InstalledExtensionList> {
-        return getInstalled()
-    }
 
-    /** save the conclusion made from events 
-     * (to keep some history) */
-    saveConclusion(
-        params: { events: string; recommendations: string, others: string }
-    ): Success {
-        return saveConclusion(params.events, params.recommendations, params.others);
-    }
+    /** Saves the conclusion drawn from events. */
+    saveConclusion = async (
+        params: { events: string; recommendations: string; others: string }
+    ): Promise<{ result: Success }> => ({
+        result: await saveConclusion(
+            params.events,
+            params.recommendations,
+            params.others
+        )
+    });
+    /** Gets the previous conclusion. */
+    getPreviousConclusion = async (): Promise<{ result: Conclusion }> => ({
+        result: await getPreviousConclusion()
+    });
 
-    /** get the previous conclusion drawn during the previous reflexion */
-    getPreviousConclusion(): Conclusion {
-        return getPreviousConclusion()
-    }
 
-    /** get the full catalog list */
-    getCatalog(): Promise<CatalogData> {
-        return getCatalog()
-    }
-
-    /** reshape the recommendations to submit to the backend logic */
-    submitRecommendation( params: {recommendations: CatalogData} ): Promise<Success> {
-        return submitRecommendation(params.recommendations);
-    }
-
-    /** send the data in a convienent way for UI. all fields are strings for AI to make 
-     * SHORT sentences to display on screen as recommendations to the user */    
-    sendPrettyRecommendation ( params: {uirecommendationlist:UIRecommendationList} ): Promise<Success> {
-        return sendPrettyRecommendation(params.uirecommendationlist)
-    }
+    /** Submits recommendations to the backend logic. */
+    submitRecommendation = async (
+        params: { recommendations: CatalogData }
+    ): Promise<{ result: Success }> => ({
+        result: await submitRecommendation(params.recommendations)
+    });
+    /** Sends recommendations formatted for the UI. */
+    sendPrettyRecommendation = async (
+        params: { uirecommendationlist: UIRecommendationList }
+    ): Promise<{ result: Success }> => ({
+        result: await sendPrettyRecommendation(params.uirecommendationlist)
+    });
 }

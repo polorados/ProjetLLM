@@ -19,20 +19,6 @@ export function getUser(id:string, name:string) {
     return { id, name };
 }
 
-
-/*
-Array{
-  Dict{
-   str:Dict{
-    str:Dict{
-      id:str,url:str,info:str
-    }
-   }
-  }
-}
-
-*/
-
 /* event-tab-date()-random() : { 
     'created / activated / updated / removed': {
       id: id()
@@ -40,9 +26,13 @@ Array{
       info: info()
     }
  }  */ 
-export async function load_events(): Promise<TabEvent[]> {
+let events: TabEvent[] = [];
+
+export async function loadTabEvents(): Promise<TabEvent[]> {
     const all = await chrome.storage.local.get(null);
-    const events: TabEvent[] = [];
+    const keys: string[] = [];
+
+    events = [];
 
     for (const [key, record] of Object.entries(all)) {
         const match = key.match(/^event-tab-(\d+)-[a-f0-9]{4}$/i);
@@ -53,14 +43,13 @@ export async function load_events(): Promise<TabEvent[]> {
         if (!name || !isEventName(name)) continue;
 
         const data = record[name];
-
         if (!isRecord(data) || typeof data.id !== "number") continue;
 
         const rawInfo = isRecord(data.info) ? data.info : {};
 
         events.push({
             time: Number(match[1]),
-            name: name,
+            name,
             id: data.id,
             url: typeof data.url === "string" ? data.url : null,
             info: data.info == null ? null : {
@@ -68,34 +57,25 @@ export async function load_events(): Promise<TabEvent[]> {
                 status: typeof rawInfo.status === "number" ? rawInfo.status : null,
             },
         });
+
+        keys.push(key);
     }
+
+    await chrome.storage.local.remove(keys);
 
     return events.sort((a, b) => a.time - b.time);
 }
+
+
+
 /* aggregate per id : 
     {
         id1 : [time_stamp: created, time_stamp: activated, ...],
         id2 : [time_stamp: created, time_stamp: closed, ...],
     }
 */
-/**
- * Agrège les événements par identifiant.
- * Si events est omis, utilise tous les événements enregistrés.
- *
- * @param {Array<{
- *   time: number,
- *   name: "created"|"activated"|"updated"|"closed",
- *   id: number,
- *   url: string|null,
- *   info: Object|null
- * }>} [events=[]] - Liste des événements à agréger.
- *
- * @returns {Object} Événements regroupés par identifiant.
- */
-export async function per_id(
-  events?: TabEvent[]
-): Promise<PerIdResult> {
-  events ??= await load_events();
+export async function per_id(): Promise<PerIdResult> {
+  await loadTabEvents();
 
   const out: PerIdResult = {};
 
@@ -115,24 +95,8 @@ export async function per_id(
         created: [time_stamp1, ...]
     }
 */
-/**
- * Agrège les événements par événement.
- * Si events est omis, utilise tous les événements enregistrés.
- *
- * @param {Array<{
- *   time: number,
- *   name: "created"|"activated"|"updated"|"closed",
- *   id: number,
- *   url: string|null,
- *   info: Object|null
- * }>} [events=[]] - Liste des événements à agréger.
- *
- * @returns {Object} Événements regroupés par événements.
- */
-export async function per_event(
-  events?: TabEvent[]
-): Promise<PerEventResult> {
-  events ??= await load_events();
+export async function per_event(): Promise<PerEventResult> {
+  await loadTabEvents();
 
   const out: PerEventResult = {
     created: [],
@@ -152,24 +116,8 @@ export async function per_event(
 /* aggregate per url in chronological order: 
     [url1, url2, ...]
 */
-/**
- * Agrège les événements par URL.
- * Si events est omis, utilise tous les événements enregistrés.
- *
- * @param {Array<{
- *   time: number,
- *   name: "created"|"activated"|"updated"|"closed",
- *   id: number,
- *   url: string|null,
- *   info: Object|null
- * }>} [events=[]] - Liste des événements à agréger.
- *
- * @returns {Object} Événements regroupés par URL.
- */
-export async function per_url(
-  events?: TabEvent[]
-): Promise<PerUrlResult> {
-  events ??= await load_events();
+export async function per_url(): Promise<PerUrlResult> {
+  await loadTabEvents();
 
   const urls = new Set<string>();
   for (const { url } of events) {

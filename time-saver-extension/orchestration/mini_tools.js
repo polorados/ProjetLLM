@@ -1,4 +1,3 @@
-import { sendPrettyRecommendation } from "../app/mini_catalog.ts";
 import { Function_Tools } from "./function_tools.ts"
 import TOOL_DEFS from "./tools.json" with { type: "json" };
 
@@ -8,20 +7,29 @@ const functionTools = new Function_Tools();
 
 const impls = {
     // events gathering
-    per_id: ({ events } = {})       => functionTools.per_id({ events }),
-    per_event: ({ events } = {})    => functionTools.per_event({ events }),
-    per_url: ({ events } = {})      => functionTools.per_url({ events }),
+    per_id: async ()       => await functionTools.per_id(),
+    per_event: async ()    => await functionTools.per_event(),
+    per_url: async ()      => await functionTools.per_url(),
 
     // recommendation selection
-    searchCatalog: ({ need } = {})  => functionTools.searchCatalog({ need }),
-    getInstalled : ()               => functionTools.getInstalled(),
-    getPreviousConclusion: ()       => functionTools.getPreviousConclusion(),
-    getCatalog: ()                  => functionTools.getCatalog(),
+    searchCatalog: async ({ need } = {}) =>
+        await functionTools.searchCatalog({ need }),
+    getInstalled: async () =>
+        await functionTools.getInstalled(),
+    getCatalog: async () =>
+        await functionTools.getCatalog(),
+
+    // history management
+    saveConclusion: async ({ events, recommendations, others } = {}) =>
+        await functionTools.saveConclusion({ events, recommendations, others }),
+    getPreviousConclusion: async () =>
+        await functionTools.getPreviousConclusion(),
 
     // output to backend or UI
-    saveConclusion: ({ events, recommendations, others } = {})=> functionTools.saveConclusion({ events, recommendations, others }),
-    submitRecommendation: ({ recommendations} = {})           => functionTools.submitRecommendation({ recommendations }),
-    sendPrettyRecommendation: ({ uirecommendationlist } = {}) => functionTools.sendPrettyRecommendation({ uirecommendationlist })
+    submitRecommendation: async ({ recommendations } = {}) =>
+        await functionTools.submitRecommendation({ recommendations }),
+    sendPrettyRecommendation: async ({ uirecommendationlist } = {}) =>
+        await functionTools.sendPrettyRecommendation({ uirecommendationlist })
 };
 
 export async function run(name, input) {
@@ -45,7 +53,7 @@ export const WEB_SEARCH = {
 };
 
 export const FIRST_MESSAGE = "Hello World";
-export const TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response"
+export const TEST_PROMPT = "Test all the tools available and give feedback on wether they worked or not. POINT OUT MISTAKES"
 
 // export const SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. À partir de statistiques d'usage agrégées, tu recommandes au plus 1 fonctionnalité native de Chrome parmi celles du catalogue et une extensions parmi celles du catalogue ou sur internet.
 

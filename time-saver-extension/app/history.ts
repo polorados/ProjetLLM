@@ -1,23 +1,18 @@
-import { Success } from "./types.ts"
-let notes_events:string;
-let notes_recommendations:string;
-let notes_other:string;
+import { Success, Conclusion } from "./types.ts"
 
-export function saveConclusion(events: string, recommendations:string, others:string): Success {
-    notes_events = events;
-    notes_recommendations = recommendations;
-    notes_other = others;
-
+export async function saveConclusion(events: string, recommendations:string, others:string): Promise<Success> {
+    chrome.storage.local.set({ history: {events:events, recommendations: recommendations, others: others}})
     // console.log("Events:", events) 
     // console.log("Recommendations:", recommendations)
     // console.log("Others:", others)
     return { success:true, details: JSON.stringify({events:events, recommendations: recommendations, others:others}) }
 }
 
-export function getPreviousConclusion() {
-    return {
-        events: notes_events,
-        recommendations: notes_recommendations,
-        others: notes_other,
+export async function getPreviousConclusion(): Promise<Conclusion> {
+    const { history } = await chrome.storage.local.get("history")
+    return history as Conclusion ?? {
+        events: "",
+        recommendations: "",
+        others: ""
     };
 }
