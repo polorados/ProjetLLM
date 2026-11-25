@@ -1,5 +1,5 @@
 import { per_id, per_url, per_event } from "../app/data_aggregator";
-import { searchCatalog, getInstalled, getCatalog, submitRecommendation } from "../app/mini_catalog";
+import { searchCatalog, getInstalled, getCatalog, submitRecommendation, sendPrettyRecommendation } from "../app/mini_catalog";
 import type {
     TabEvent,
     Need,
@@ -10,6 +10,8 @@ import type {
     CatalogData,
     InstalledExtensionList,
     ReshapedRecommendations,
+    UIRecommendationList,
+    Success,
 } from "../app/types";
 import { saveConclusion, getPreviousConclusion } from "./../app/history.ts"
 
@@ -52,7 +54,7 @@ export class Function_Tools {
      * (to keep some history) */
     saveConclusion(
         params: { events: string; recommendations: string, others: string }
-    ): { success: boolean } {
+    ): Success {
         return saveConclusion(params.events, params.recommendations, params.others);
     }
 
@@ -66,8 +68,14 @@ export class Function_Tools {
         return getCatalog()
     }
 
-    /** reshape the recommendations to submit to the UI */
-    submitRecommendation( params: {recommendations: CatalogData} ): Promise<{success:boolean}> {
+    /** reshape the recommendations to submit to the backend logic */
+    submitRecommendation( params: {recommendations: CatalogData} ): Promise<Success> {
         return submitRecommendation(params.recommendations);
+    }
+
+    /** send the data in a convienent way for UI. all fields are strings for AI to make 
+     * SHORT sentences to display on screen as recommendations to the user */    
+    sendPrettyRecommendation ( params: {uirecommendationlist:UIRecommendationList} ): Promise<Success> {
+        return sendPrettyRecommendation(params.uirecommendationlist)
     }
 }

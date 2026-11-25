@@ -1,3 +1,4 @@
+import { sendPrettyRecommendation } from "../app/mini_catalog.ts";
 import { Function_Tools } from "./function_tools.ts"
 import TOOL_DEFS from "./tools.json" with { type: "json" };
 
@@ -6,15 +7,21 @@ export { TOOL_DEFS };
 const functionTools = new Function_Tools();
 
 const impls = {
+    // events gathering
     per_id: ({ events } = {})       => functionTools.per_id({ events }),
     per_event: ({ events } = {})    => functionTools.per_event({ events }),
     per_url: ({ events } = {})      => functionTools.per_url({ events }),
+
+    // recommendation selection
     searchCatalog: ({ need } = {})  => functionTools.searchCatalog({ need }),
     getInstalled : ()               => functionTools.getInstalled(),
-    saveConclusion: ({ events, recommendations, others } = {}) => functionTools.saveConclusion({ events, recommendations, others }),
     getPreviousConclusion: ()       => functionTools.getPreviousConclusion(),
-    submitRecommendation: ({ recommendations} = {})     => functionTools.submitRecommendation({ recommendations }),
-    getCatalog: ()                  => functionTools.getCatalog()
+    getCatalog: ()                  => functionTools.getCatalog(),
+
+    // output to backend or UI
+    saveConclusion: ({ events, recommendations, others } = {})=> functionTools.saveConclusion({ events, recommendations, others }),
+    submitRecommendation: ({ recommendations} = {})           => functionTools.submitRecommendation({ recommendations }),
+    sendPrettyRecommendation: ({ uirecommendationlist } = {}) => functionTools.sendPrettyRecommendation({ uirecommendationlist })
 };
 
 export async function run(name, input) {

@@ -170,9 +170,12 @@ async function submitRecommendation(submission) {
       })
     )
   };
-  console.log("envoi de recommendation !!!");
   await chrome.storage.local.set({ recommendations });
-  return { success: true };
+  return { success: true, details: JSON.stringify(recommendations) };
+}
+async function sendPrettyRecommendation(uirecommendationlist) {
+  await chrome.storage.local.set({ UIRecommendationList: uirecommendationlist });
+  return { success: true, details: JSON.stringify(uirecommendationlist) };
 }
 var CATALOG_URL, BUNDLED_PATH, STORAGE_KEY;
 var init_mini_catalog = __esm({
@@ -189,10 +192,7 @@ function saveConclusion(events, recommendations, others) {
   notes_events = events;
   notes_recommendations = recommendations;
   notes_other = others;
-  console.log("Events:", events);
-  console.log("Recommendations:", recommendations);
-  console.log("Others:", others);
-  return { success: true };
+  return { success: true, details: JSON.stringify({ events, recommendations, others }) };
 }
 function getPreviousConclusion() {
   return {
@@ -250,9 +250,14 @@ var init_function_tools = __esm({
       getCatalog() {
         return getCatalog();
       }
-      /** reshape the recommendations to submit to the UI */
+      /** reshape the recommendations to submit to the backend logic */
       submitRecommendation(params) {
         return submitRecommendation(params.recommendations);
+      }
+      /** send the data in a convienent way for UI. all fields are strings for AI to make 
+       * SHORT sentences to display on screen as recommendations to the user */
+      sendPrettyRecommendation(params) {
+        return sendPrettyRecommendation(params.uirecommendationlist);
       }
     };
   }
@@ -688,7 +693,7 @@ var init_tools = __esm({
       {
         type: "function",
         name: "submitRecommendation",
-        description: "reshape the recommendations to submit to the UI",
+        description: "reshape the recommendations to submit to the backend logic",
         parameters: {
           type: "object",
           properties: {
@@ -795,6 +800,78 @@ var init_tools = __esm({
           }
         },
         strict: true
+      },
+      {
+        type: "function",
+        name: "sendPrettyRecommendation",
+        description: "send the data in a convienent way for UI. all fields are strings for AI\u202Fto make\nSHORT\u202Fsentences to display on screen as recommendations to the user",
+        parameters: {
+          type: "object",
+          properties: {
+            uirecommendationlist: {
+              $ref: "#/$defs/UIRecommendationList"
+            }
+          },
+          required: [
+            "uirecommendationlist"
+          ],
+          additionalProperties: false,
+          $defs: {
+            UIRecommendation: {
+              type: "object",
+              properties: {
+                behaviourPhrase: {
+                  type: "string"
+                },
+                needPhrase: {
+                  type: "string"
+                },
+                recommendationPhrases: {
+                  type: "object",
+                  properties: {
+                    phrase: {
+                      type: "string"
+                    },
+                    details: {
+                      type: "string"
+                    }
+                  },
+                  required: [
+                    "phrase",
+                    "details"
+                  ],
+                  additionalProperties: false
+                },
+                urlForHelp: {
+                  type: "string"
+                }
+              },
+              required: [
+                "behaviourPhrase",
+                "needPhrase",
+                "recommendationPhrases",
+                "urlForHelp"
+              ],
+              additionalProperties: false
+            },
+            UIRecommendationList: {
+              type: "object",
+              properties: {
+                uirecommendations: {
+                  type: "array",
+                  items: {
+                    $ref: "#/$defs/UIRecommendation"
+                  }
+                }
+              },
+              required: [
+                "uirecommendations"
+              ],
+              additionalProperties: false
+            }
+          }
+        },
+        strict: true
       }
     ];
   }
@@ -806,23 +883,28 @@ async function run(name, input) {
   if (!impl) throw new Error(`Unknown tool: ${name}`);
   return await impl(input ?? {});
 }
-var functionTools, impls, WEB_SEARCH, SYSTEM_PROMPT, OPTIMIZE_PROMPT;
+var functionTools, impls, WEB_SEARCH, TEST_PROMPT, SYSTEM_PROMPT, OPTIMIZE_PROMPT;
 var init_mini_tools = __esm({
   "orchestration/mini_tools.js"() {
     "use strict";
+    init_mini_catalog();
     init_function_tools();
     init_tools();
     functionTools = new Function_Tools();
     impls = {
+      // events gathering
       per_id: ({ events } = {}) => functionTools.per_id({ events }),
       per_event: ({ events } = {}) => functionTools.per_event({ events }),
       per_url: ({ events } = {}) => functionTools.per_url({ events }),
+      // recommendation selection
       searchCatalog: ({ need } = {}) => functionTools.searchCatalog({ need }),
       getInstalled: () => functionTools.getInstalled(),
-      saveConclusion: ({ events, recommendations, others } = {}) => functionTools.saveConclusion({ events, recommendations, others }),
       getPreviousConclusion: () => functionTools.getPreviousConclusion(),
+      getCatalog: () => functionTools.getCatalog(),
+      // output to backend or UI
+      saveConclusion: ({ events, recommendations, others } = {}) => functionTools.saveConclusion({ events, recommendations, others }),
       submitRecommendation: ({ recommendations } = {}) => functionTools.submitRecommendation({ recommendations }),
-      getCatalog: () => functionTools.getCatalog()
+      sendPrettyRecommendation: ({ uirecommendationlist } = {}) => functionTools.sendPrettyRecommendation({ uirecommendationlist })
     };
     WEB_SEARCH = {
       type: "web_search",
@@ -834,6 +916,7 @@ var init_mini_tools = __esm({
         ]
       }
     };
+    TEST_PROMPT = "Test all the tools available and give the outputs of all of them in your response";
     SYSTEM_PROMPT = `Tu es le moteur de recommandation d'une extension Chrome. \xC0 partir de statistiques d'usage agr\xE9g\xE9es, tu recommandes au plus 3 fonctionnalit\xE9s natives de Chrome ou extensions parmi celles du catalogue.
 
 D\xC9MARCHE
@@ -27077,6 +27160,9 @@ var init_api = __esm({
 });
 
 // orchestration/llm.js
+async function testLLM() {
+  return await runLLMCycle(TEST_PROMPT);
+}
 async function applyTools(calls) {
   let results = [];
   for (const call of calls) {
@@ -27166,12 +27252,18 @@ var require_main = __commonJS({
     }
     var INTERVAL_TIME_MINUTES = 3;
     var TEST_FUNCTIONS = false;
+    var TEST_TOOLS = true;
     async function main() {
       syncCatalog();
       track_tabs();
       await connect();
       if (TEST_FUNCTIONS) {
         await runTests();
+      }
+      if (TEST_TOOLS) {
+        console.log("-------Testing all the tools-------");
+        const out = await testLLM();
+        console.log("--------", out.text, "---------");
       }
       await runPeriodicAnalysis();
       setInterval(runPeriodicAnalysis, INTERVAL_TIME_MINUTES * 1e3 * 60);

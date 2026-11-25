@@ -424,7 +424,7 @@
   {
     "type": "function",
     "name": "submitRecommendation",
-    "description": "reshape the recommendations to submit to the UI",
+    "description": "reshape the recommendations to submit to the backend logic",
     "parameters": {
       "type": "object",
       "properties": {
@@ -527,6 +527,78 @@
             "traduction",
             "trop_onglets"
           ]
+        }
+      }
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "sendPrettyRecommendation",
+    "description": "send the data in a convienent way for UI. all fields are strings for AI to make\nSHORT sentences to display on screen as recommendations to the user",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "uirecommendationlist": {
+          "$ref": "#/$defs/UIRecommendationList"
+        }
+      },
+      "required": [
+        "uirecommendationlist"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "UIRecommendation": {
+          "type": "object",
+          "properties": {
+            "behaviourPhrase": {
+              "type": "string"
+            },
+            "needPhrase": {
+              "type": "string"
+            },
+            "recommendationPhrases": {
+              "type": "object",
+              "properties": {
+                "phrase": {
+                  "type": "string"
+                },
+                "details": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "phrase",
+                "details"
+              ],
+              "additionalProperties": false
+            },
+            "urlForHelp": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "behaviourPhrase",
+            "needPhrase",
+            "recommendationPhrases",
+            "urlForHelp"
+          ],
+          "additionalProperties": false
+        },
+        "UIRecommendationList": {
+          "type": "object",
+          "properties": {
+            "uirecommendations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/UIRecommendation"
+              }
+            }
+          },
+          "required": [
+            "uirecommendations"
+          ],
+          "additionalProperties": false
         }
       }
     },
